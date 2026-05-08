@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://ymicgemwmmaqbtgvftpe.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltaWNnZW13bW1hcWJ0Z3ZmdHBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMzIzOTYsImV4cCI6MjA5MzgwODM5Nn0.DtpLkGsop_LtYWAAjG6cg7ueYAz6BBfsDNxZQbRw_4c";
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const PNS_TOKEN = process.argv[2];

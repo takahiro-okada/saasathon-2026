@@ -10,6 +10,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import ws from "ws"; // これを追加
 import { writeFileSync, readFileSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -22,7 +23,14 @@ const SOURCE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 
 async function exportData() {
   console.log("Exporting store_products from source DB...");
-  const supabase = createClient(SOURCE_URL, SOURCE_KEY);
+
+  const supabase = createClient(SOURCE_URL, SOURCE_KEY, {
+    auth: { persistSession: false },
+realtime: { 
+      enabled: false,
+      transport: ws // ここに ws を渡す
+    }
+  });
 
   const allProducts = [];
   let offset = 0;
@@ -63,7 +71,13 @@ async function importData() {
   const products = JSON.parse(readFileSync(JSON_FILE, "utf-8"));
   console.log(`Importing ${products.length} store_products to ${targetUrl}...`);
 
-  const supabase = createClient(targetUrl, targetKey);
+  const supabase = createClient(SOURCE_URL, SOURCE_KEY, {
+    auth: { persistSession: false },
+realtime: { 
+      enabled: false,
+      transport: ws // ここに ws を渡す
+    }
+  });
   const batchSize = 50;
 
   for (let i = 0; i < products.length; i += batchSize) {
