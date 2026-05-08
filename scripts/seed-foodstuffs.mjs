@@ -6,11 +6,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const PNS_TOKEN = process.argv[2];
 if (!PNS_TOKEN) {
-  console.error("Usage: node scripts/seed-foodstuffs.mjs <JWT_TOKEN>");
+  console.error("Usage: node scripts/seed-foodstuffs.mjs <JWT_TOKEN> [--store-id=<uuid>] [--location=<location_id>]");
+  console.error("  --store-id  Foodstuffs store UUID (default: PnS Riccarton)");
+  console.error("  --location  store_locations.id to tag results (e.g. pns-riccarton)");
   process.exit(1);
 }
 
-const STORE_ID = "be4c4780-218e-425a-a90f-63e21773572b";
+// Parse CLI flags
+let STORE_ID = "be4c4780-218e-425a-a90f-63e21773572b"; // PnS Riccarton default
+let LOCATION_ID = null;
+
+for (const arg of process.argv.slice(3)) {
+  if (arg.startsWith("--store-id=")) STORE_ID = arg.split("=")[1];
+  if (arg.startsWith("--location=")) LOCATION_ID = arg.split("=")[1];
+}
 
 async function searchFoodstuffs(domain, query, store, banner) {
   const res = await fetch(
@@ -87,36 +96,42 @@ async function searchFoodstuffs(domain, query, store, banner) {
   });
 }
 
-async function main() {
+async function seedStore(brand, domain, banner, locationId) {
   const { data: ingredients } = await supabase
     .from("ingredients")
     .select("id, name_ja, name_en, search_query");
 
   if (!ingredients) {
     console.error("No ingredients found");
-    return;
+    return { success: 0, failed: 0 };
   }
 
-  console.log(`Found ${ingredients.length} ingredients. Seeding PnS and NW...`);
-
-  let successPns = 0;
-  let successNw = 0;
+  let success = 0;
   let failed = 0;
+  const label = brand.toUpperCase().slice(0, 3);
 
   for (const ing of ingredients) {
-    // Pak'nSave
     try {
-      const pnsProducts = await searchFoodstuffs(
-        "api-prod.paknsave.co.nz",
-        ing.search_query,
-        "paknsave",
-        "PNS"
-      );
-      if (pnsProducts.length > 0) {
-        const p = pnsProducts[0];
+      const products = await searchFoodstuffs(domain, ing.search_query, brand, banner);
+      if (products.length > 0) {
+        const p = products[0];
+
+        // Upsert: delete old data for this ingredient+store+location, then insert
+        const deleteQuery = supabase
+          .from("store_products")
+          .delete()
+          .eq("ingredient_id", ing.id)
+          .eq("store", brand);
+
+        if (locationId) {
+          deleteQuery.eq("store_location_id", locationId);
+        }
+        await deleteQuery;
+
         await supabase.from("store_products").insert({
           ingredient_id: ing.id,
-          store: "paknsave",
+          store: brand,
+          store_location_id: locationId,
           product_name: p.name,
           brand: p.brand,
           price: p.price,
@@ -126,53 +141,46 @@ async function main() {
           size: p.size,
           unit_price: p.unitPrice,
         });
-        console.log(`  PnS ✓ ${ing.name_ja} → ${p.name} $${p.salePrice ?? p.price}`);
-        successPns++;
+        console.log(`  ${label} ✓ ${ing.name_ja} → ${p.name} $${p.salePrice ?? p.price}`);
+        success++;
       } else {
-        console.log(`  PnS ✗ ${ing.name_ja} — no results`);
+        console.log(`  ${label} ✗ ${ing.name_ja} — no results`);
       }
     } catch (e) {
-      console.log(`  PnS ✗ ${ing.name_ja} — ${e.message}`);
+      console.log(`  ${label} ✗ ${ing.name_ja} — ${e.message}`);
       failed++;
     }
 
-    // New World (same token works for both)
-    try {
-      const nwProducts = await searchFoodstuffs(
-        "api-prod.newworld.co.nz",
-        ing.search_query,
-        "newworld",
-        "NW"
-      );
-      if (nwProducts.length > 0) {
-        const p = nwProducts[0];
-        await supabase.from("store_products").insert({
-          ingredient_id: ing.id,
-          store: "newworld",
-          product_name: p.name,
-          brand: p.brand,
-          price: p.price,
-          sale_price: p.salePrice,
-          image_url: p.imageUrl,
-          in_stock: p.inStock,
-          size: p.size,
-          unit_price: p.unitPrice,
-        });
-        console.log(`  NW  ✓ ${ing.name_ja} → ${p.name} $${p.salePrice ?? p.price}`);
-        successNw++;
-      } else {
-        console.log(`  NW  ✗ ${ing.name_ja} — no results`);
-      }
-    } catch (e) {
-      console.log(`  NW  ✗ ${ing.name_ja} — ${e.message}`);
-      failed++;
-    }
-
-    // Rate limiting
     await new Promise((r) => setTimeout(r, 300));
   }
 
-  console.log(`\nDone! PnS: ${successPns}, NW: ${successNw}, Failed: ${failed}`);
+  return { success, failed };
+}
+
+async function main() {
+  // Determine which brand based on the location ID prefix
+  const isPns = !LOCATION_ID || LOCATION_ID.startsWith("pns-");
+  const isNw = !LOCATION_ID || LOCATION_ID.startsWith("nw-");
+
+  console.log(`Store ID: ${STORE_ID}`);
+  console.log(`Location: ${LOCATION_ID ?? "(none — seeding both PnS and NW)"}`);
+  console.log("");
+
+  if (isPns) {
+    console.log("--- Pak'nSave ---");
+    const pns = await seedStore("paknsave", "api-prod.paknsave.co.nz", "PNS",
+      LOCATION_ID?.startsWith("pns-") ? LOCATION_ID : null);
+    console.log(`PnS: ${pns.success} success, ${pns.failed} failed\n`);
+  }
+
+  if (isNw) {
+    console.log("--- New World ---");
+    const nw = await seedStore("newworld", "api-prod.newworld.co.nz", "NW",
+      LOCATION_ID?.startsWith("nw-") ? LOCATION_ID : null);
+    console.log(`NW: ${nw.success} success, ${nw.failed} failed\n`);
+  }
+
+  console.log("Done!");
 }
 
 main().catch(console.error);
