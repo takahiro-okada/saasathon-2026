@@ -1,0 +1,86 @@
+[
+  {
+    "brand": "paknsave",
+    "slug": "hornby",
+    "lat": -43.5425,
+    "lng": 172.5228,
+    "storeIds": []
+  },
+  {
+    "brand": "paknsave",
+    "slug": "moorhouse",
+    "lat": -43.5389,
+    "lng": 172.6383,
+    "storeIds": []
+  },
+  {
+    "brand": "paknsave",
+    "slug": "papanui",
+    "lat": -43.4854,
+    "lng": 172.615,
+    "storeIds": []
+  },
+  {
+    "brand": "paknsave",
+    "slug": "riccarton",
+    "lat": -43.531,
+    "lng": 172.5962,
+    "storeIds": []
+  },
+  {
+    "brand": "paknsave",
+    "slug": "wainoni",
+    "lat": -43.5132,
+    "lng": 172.694,
+    "storeIds": []
+  },
+  {
+    "brand": "newworld",
+    "slug": "wigram",
+    "lat": -43.5526,
+    "lng": 172.5578,
+    "storeIds": []
+  },
+  {
+    "brand": "newworld",
+    "slug": "ilam",
+    "lat": -43.524,
+    "lng": 172.571,
+    "storeIds": []
+  },
+  {
+    "brand": "newworld",
+    "slug": "halswell",
+    "lat": -43.576,
+    "lng": 172.562,
+    "storeIds": []
+  },
+  {
+    "brand": "newworld",
+    "slug": "bishopdale",
+    "lat": -43.496,
+    "lng": 172.597,
+    "storeIds": []
+  },
+  {
+    "brand": "newworld",
+    "slug": "ferry-road",
+    "lat": -43.545,
+    "lng": 172.668,
+    "storeIds": []
+  },
+  {
+    "brand": "newworld",
+    "slug": "stanmore",
+    "lat": -43.522,
+    "lng": 172.659,
+    "storeIds": []
+  },
+  {
+    "brand": "newworld",
+    "slug": "prestons",
+    "lat": -43.495,
+    "lng": 172.634,
+    "storeIds": []
+  }
+]
