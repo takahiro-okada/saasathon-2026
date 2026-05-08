@@ -9,7 +9,24 @@ import type { SupermarketProduct } from "@/app/lib/scraper";
 
 type StoreKey = "woolworths" | "paknsave" | "newworld";
 
-const STORES: StoreKey[] = ["woolworths", "paknsave", "newworld"];
+const BRANDS: StoreKey[] = ["woolworths", "paknsave", "newworld"];
+
+function haversineDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function getSearchFn(
   store: StoreKey
@@ -24,6 +41,13 @@ function getSearchFn(
   }
 }
 
+type StoreLocationInfo = {
+  id: string;
+  brand: StoreKey;
+  name: string;
+  distance_km: number;
+};
+
 type IngredientPrice = {
   ingredient_id: string;
   name_ja: string;
@@ -31,7 +55,7 @@ type IngredientPrice = {
   quantity: string;
   is_optional: boolean;
   stores: Record<
-    StoreKey,
+    string,
     {
       product_name: string;
       price: number;
@@ -44,17 +68,52 @@ type IngredientPrice = {
 };
 
 type StoreTotal = {
+  store_location_id: string;
   store: StoreKey;
+  store_name: string;
+  distance_km: number;
   total: number;
   available_count: number;
   missing_count: number;
-  label: string;
 };
+
+async function getNearestStores(
+  lat: number,
+  lng: number
+): Promise<StoreLocationInfo[]> {
+  const { data: locations } = await supabase
+    .from("store_locations")
+    .select("id, brand, name, lat, lng");
+
+  if (!locations) return [];
+
+  const withDistance = locations.map((loc) => ({
+    id: loc.id,
+    brand: loc.brand as StoreKey,
+    name: loc.name,
+    distance_km:
+      Math.round(haversineDistance(lat, lng, loc.lat, loc.lng) * 10) / 10,
+  }));
+
+  withDistance.sort((a, b) => a.distance_km - b.distance_km);
+
+  const nearest: StoreLocationInfo[] = [];
+  const found: Partial<Record<StoreKey, boolean>> = {};
+  for (const s of withDistance) {
+    if (!found[s.brand]) {
+      nearest.push(s);
+      found[s.brand] = true;
+    }
+    if (nearest.length === BRANDS.length) break;
+  }
+  return nearest;
+}
 
 async function getProductForStore(
   ingredientId: string,
   searchQuery: string,
-  store: StoreKey
+  brand: StoreKey,
+  storeLocationId: string | null
 ): Promise<{
   product_name: string;
   price: number;
@@ -63,17 +122,23 @@ async function getProductForStore(
   in_stock: boolean;
   unit_price?: string;
 } | null> {
-  const { data: cached } = await supabase
+  let query = supabase
     .from("store_products")
     .select("*")
     .eq("ingredient_id", ingredientId)
-    .eq("store", store)
+    .eq("store", brand)
     .gte(
       "scraped_at",
       new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     )
     .order("scraped_at", { ascending: false })
     .limit(1);
+
+  if (storeLocationId) {
+    query = query.eq("store_location_id", storeLocationId);
+  }
+
+  const { data: cached } = await query;
 
   if (cached && cached.length > 0) {
     const c = cached[0];
@@ -87,8 +152,32 @@ async function getProductForStore(
     };
   }
 
+  // Fallback: try without store_location_id filter (legacy data)
+  if (storeLocationId) {
+    const { data: fallback } = await supabase
+      .from("store_products")
+      .select("*")
+      .eq("ingredient_id", ingredientId)
+      .eq("store", brand)
+      .order("scraped_at", { ascending: false })
+      .limit(1);
+
+    if (fallback && fallback.length > 0) {
+      const c = fallback[0];
+      return {
+        product_name: c.product_name,
+        price: Number(c.price),
+        sale_price: c.sale_price ? Number(c.sale_price) : undefined,
+        image_url: c.image_url ?? "",
+        in_stock: c.in_stock,
+        unit_price: c.unit_price ?? undefined,
+      };
+    }
+  }
+
+  // Last resort: live scrape
   try {
-    const searchFn = getSearchFn(store);
+    const searchFn = getSearchFn(brand);
     const products = await searchFn(searchQuery);
     if (products.length > 0) {
       const p = products[0];
@@ -96,7 +185,8 @@ async function getProductForStore(
         .from("store_products")
         .insert({
           ingredient_id: ingredientId,
-          store,
+          store: brand,
+          store_location_id: storeLocationId,
           product_name: p.name,
           brand: p.brand,
           price: p.price,
@@ -124,7 +214,10 @@ async function getProductForStore(
 }
 
 export async function GET(request: NextRequest) {
-  const recipeId = new URL(request.url).searchParams.get("recipe_id") ?? "";
+  const params = new URL(request.url).searchParams;
+  const recipeId = params.get("recipe_id") ?? "";
+  const lat = parseFloat(params.get("lat") ?? "");
+  const lng = parseFloat(params.get("lng") ?? "");
 
   if (!recipeId.trim()) {
     return Response.json({ error: "recipe_id is required" }, { status: 400 });
@@ -138,6 +231,19 @@ export async function GET(request: NextRequest) {
 
   if (!recipe) {
     return Response.json({ error: "Recipe not found" }, { status: 404 });
+  }
+
+  // Determine which stores to compare
+  let compareStores: StoreLocationInfo[];
+  if (!isNaN(lat) && !isNaN(lng)) {
+    compareStores = await getNearestStores(lat, lng);
+  } else {
+    compareStores = BRANDS.map((brand) => ({
+      id: "",
+      brand,
+      name: brand === "woolworths" ? "Woolworths" : brand === "paknsave" ? "Pak'nSave" : "New World",
+      distance_km: 0,
+    }));
   }
 
   const { data: recipeIngredients } = await supabase
@@ -165,25 +271,19 @@ export async function GET(request: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rawIng = ri.ingredients as any;
       const ing = Array.isArray(rawIng) ? rawIng[0] : rawIng;
-      if (!ing) {
-        return null as unknown as IngredientPrice;
-      }
+      if (!ing) return null as unknown as IngredientPrice;
 
       const storeResults = await Promise.all(
-        STORES.map(async (store) => {
+        compareStores.map(async (cs) => {
           const product = await getProductForStore(
             ing.id,
             ing.search_query,
-            store
+            cs.brand,
+            cs.id || null
           );
-          return [store, product] as const;
+          return [cs.id || cs.brand, product] as const;
         })
       );
-
-      const stores = Object.fromEntries(storeResults) as Record<
-        StoreKey,
-        IngredientPrice["stores"][StoreKey]
-      >;
 
       return {
         ingredient_id: ing.id,
@@ -191,7 +291,7 @@ export async function GET(request: NextRequest) {
         name_en: ing.name_en,
         quantity: ri.quantity,
         is_optional: ri.is_optional,
-        stores,
+        stores: Object.fromEntries(storeResults),
       };
     })
   );
@@ -199,13 +299,14 @@ export async function GET(request: NextRequest) {
   const validIngredients = ingredients.filter(Boolean);
   const requiredIngredients = validIngredients.filter((i) => !i.is_optional);
 
-  const storeTotals: StoreTotal[] = STORES.map((store) => {
+  const storeTotals: StoreTotal[] = compareStores.map((cs) => {
+    const key = cs.id || cs.brand;
     let total = 0;
     let available = 0;
     let missing = 0;
 
     for (const ing of requiredIngredients) {
-      const product = ing.stores[store];
+      const product = ing.stores[key];
       if (product && product.in_stock) {
         total += product.sale_price ?? product.price;
         available++;
@@ -214,18 +315,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const labels: Record<StoreKey, string> = {
-      woolworths: "Woolworths",
-      paknsave: "Pak'nSave",
-      newworld: "New World",
-    };
-
     return {
-      store,
+      store_location_id: cs.id,
+      store: cs.brand,
+      store_name: cs.name,
+      distance_km: cs.distance_km,
       total: Math.round(total * 100) / 100,
       available_count: available,
       missing_count: missing,
-      label: labels[store],
     };
   });
 
@@ -244,6 +341,7 @@ export async function GET(request: NextRequest) {
     },
     ingredients: validIngredients,
     store_totals: storeTotals,
-    cheapest: storeTotals[0]?.store ?? null,
+    cheapest: storeTotals[0] ?? null,
+    compare_stores: compareStores,
   });
 }
