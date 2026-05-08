@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import type { RecipeWithPricing, IngredientWithPricing } from "@/app/lib/recipes";
 
@@ -52,6 +52,19 @@ interface CompareResponse {
   cheapest: StoreKey | null;
 }
 
+interface NearbyStore {
+  id: string;
+  name: string;
+  brand: StoreKey;
+  distance_km: number;
+  address: string;
+}
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 const STORE_LABELS: Record<StoreKey, string> = {
   woolworths: "Woolworths",
   paknsave: "Pak'nSave",
@@ -65,11 +78,21 @@ const STORE_COLORS: Record<StoreKey, string> = {
 };
 
 const STORE_INACTIVE: Record<StoreKey, string> = {
-  woolworths:
-    "bg-white text-green-700 border-green-300 hover:bg-green-50",
-  paknsave:
-    "bg-white text-yellow-700 border-yellow-300 hover:bg-yellow-50",
+  woolworths: "bg-white text-green-700 border-green-300 hover:bg-green-50",
+  paknsave: "bg-white text-yellow-700 border-yellow-300 hover:bg-yellow-50",
   newworld: "bg-white text-red-700 border-red-300 hover:bg-red-50",
+};
+
+const STORE_BG_COLORS: Record<StoreKey, string> = {
+  woolworths: "bg-green-50 border-green-200",
+  paknsave: "bg-yellow-50 border-yellow-200",
+  newworld: "bg-red-50 border-red-200",
+};
+
+const STORE_TEXT_COLORS: Record<StoreKey, string> = {
+  woolworths: "text-green-700",
+  paknsave: "text-yellow-700",
+  newworld: "text-red-700",
 };
 
 function StoreTabs({
@@ -86,9 +109,7 @@ function StoreTabs({
           key={store}
           onClick={() => onChange(store)}
           className={`flex-1 py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
-            selected === store
-              ? STORE_COLORS[store]
-              : STORE_INACTIVE[store]
+            selected === store ? STORE_COLORS[store] : STORE_INACTIVE[store]
           }`}
         >
           {STORE_LABELS[store]}
@@ -98,34 +119,18 @@ function StoreTabs({
   );
 }
 
-function PriceBadge({
-  price,
-  salePrice,
-}: {
-  price: number;
-  salePrice?: number;
-}) {
+function PriceBadge({ price, salePrice }: { price: number; salePrice?: number }) {
   if (price === 0) return null;
-
   if (salePrice && salePrice < price) {
     return (
       <span className="flex items-center gap-1">
-        <span className="text-red-500 font-bold text-sm">
-          ${salePrice.toFixed(2)}
-        </span>
-        <span className="text-gray-400 line-through text-xs">
-          ${price.toFixed(2)}
-        </span>
-        <span className="bg-red-100 text-red-600 text-xs px-1 rounded font-medium">
-          SALE
-        </span>
+        <span className="text-red-500 font-bold text-sm">${salePrice.toFixed(2)}</span>
+        <span className="text-gray-400 line-through text-xs">${price.toFixed(2)}</span>
+        <span className="bg-red-100 text-red-600 text-xs px-1 rounded font-medium">SALE</span>
       </span>
     );
   }
-
-  return (
-    <span className="text-green-600 font-bold text-sm">${price.toFixed(2)}</span>
-  );
+  return <span className="text-green-600 font-bold text-sm">${price.toFixed(2)}</span>;
 }
 
 function StockBadge({ inStock }: { inStock: boolean }) {
@@ -154,17 +159,13 @@ function IngredientCard({
   loadingPrices: boolean;
 }) {
   const live = ingredient.liveProduct;
-
   return (
     <div
       className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-        checked
-          ? "bg-orange-50 border-orange-300 opacity-60"
-          : "bg-white border-gray-200 hover:border-orange-300"
+        checked ? "bg-orange-50 border-orange-300 opacity-60" : "bg-white border-gray-200 hover:border-orange-300"
       }`}
       onClick={onToggle}
     >
-      {/* 商品画像 */}
       <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
         {loadingPrices ? (
           <div className="w-full h-full bg-gray-100 animate-pulse rounded-lg" />
@@ -177,7 +178,6 @@ function IngredientCard({
             className="object-contain w-full h-full"
             unoptimized
             onError={(e) => {
-              // 画像読み込み失敗時はプレースホルダーに差し替え
               (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
@@ -185,120 +185,65 @@ function IngredientCard({
           <span className="text-2xl">🛒</span>
         )}
       </div>
-
-      {/* チェックボックス */}
       <div className="mt-0.5 shrink-0">
         <div
           className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-            checked
-              ? "bg-orange-500 border-orange-500"
-              : "border-gray-300"
+            checked ? "bg-orange-500 border-orange-500" : "border-gray-300"
           }`}
         >
           {checked && (
-            <svg
-              className="w-3 h-3 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={3}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
+            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           )}
         </div>
       </div>
-
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 mb-1">
-          <span
-            className={`font-medium text-gray-900 ${
-              checked ? "line-through text-gray-400" : ""
-            }`}
-          >
+          <span className={`font-medium text-gray-900 ${checked ? "line-through text-gray-400" : ""}`}>
             {ingredient.name_ja}
           </span>
           <span className="text-sm text-gray-500">({ingredient.quantity})</span>
           {ingredient.optional && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
-              Optional
-            </span>
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Optional</span>
           )}
         </div>
-
-        <p
-          className={`text-sm font-semibold text-orange-600 ${
-            checked ? "line-through text-orange-400" : ""
-          }`}
-        >
+        <p className={`text-sm font-semibold text-orange-600 ${checked ? "line-through text-orange-400" : ""}`}>
           {live?.name ?? ingredient.nz_product}
         </p>
-
-        {/* 価格・在庫情報 */}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {loadingPrices ? (
-            <span className="text-xs text-gray-400 animate-pulse">
-              価格を読み込み中...
-            </span>
+            <span className="text-xs text-gray-400 animate-pulse">価格を読み込み中...</span>
           ) : live ? (
             <>
               <PriceBadge price={live.price} salePrice={live.salePrice} />
-              {live.unitPrice && (
-                <span className="text-xs text-gray-400">{live.unitPrice}</span>
-              )}
+              {live.unitPrice && <span className="text-xs text-gray-400">{live.unitPrice}</span>}
               <StockBadge inStock={live.inStock} />
             </>
           ) : (
             <span className="text-xs text-gray-400">価格情報なし</span>
           )}
         </div>
-
         <p className="text-xs text-gray-400 mt-0.5">💡 {ingredient.aisle}</p>
       </div>
     </div>
   );
 }
 
-const STORE_BG_COLORS: Record<StoreKey, string> = {
-  woolworths: "bg-green-50 border-green-200",
-  paknsave: "bg-yellow-50 border-yellow-200",
-  newworld: "bg-red-50 border-red-200",
-};
-
-const STORE_TEXT_COLORS: Record<StoreKey, string> = {
-  woolworths: "text-green-700",
-  paknsave: "text-yellow-700",
-  newworld: "text-red-700",
-};
-
-function PriceComparePanel({
-  recipeId,
-  recipeName,
-}: {
-  recipeId: string;
-  recipeName: string;
-}) {
+function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeName: string }) {
   const [data, setData] = useState<CompareResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [owned, setOwned] = useState<Set<string>>(new Set());
 
   const fetchComparison = async () => {
-    if (data) {
-      setOpen(!open);
-      return;
-    }
+    if (data) { setOpen(!open); return; }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/recipes/compare?recipe_id=${encodeURIComponent(recipeId)}`
-      );
-      if (!res.ok) throw new Error("比較データの取得に失敗しました");
+      const res = await fetch(`/api/recipes/compare?recipe_id=${encodeURIComponent(recipeId)}`);
+      if (!res.ok) throw new Error();
       const json: CompareResponse = await res.json();
       setData(json);
       setOpen(true);
@@ -309,7 +254,48 @@ function PriceComparePanel({
     }
   };
 
-  const cheapest = data?.cheapest;
+  const toggleOwned = (id: string) => {
+    setOwned((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const requiredIngredients = data?.ingredients.filter((i) => !i.is_optional) ?? [];
+  const adjustedTotals = data
+    ? (["woolworths", "paknsave", "newworld"] as StoreKey[]).map((store) => {
+        let total = 0;
+        let available = 0;
+        let missing = 0;
+        for (const ing of requiredIngredients) {
+          if (owned.has(ing.ingredient_id)) continue;
+          const product = ing.stores[store];
+          if (product && product.in_stock) {
+            total += product.sale_price ?? product.price;
+            available++;
+          } else {
+            missing++;
+          }
+        }
+        return {
+          store,
+          total: Math.round(total * 100) / 100,
+          available_count: available,
+          missing_count: missing,
+          label: STORE_LABELS[store],
+        };
+      })
+    : [];
+
+  adjustedTotals.sort((a, b) => {
+    if (a.missing_count !== b.missing_count) return a.missing_count - b.missing_count;
+    return a.total - b.total;
+  });
+
+  const cheapest = adjustedTotals[0]?.store ?? null;
+  const ownedCount = owned.size;
 
   return (
     <div className="mt-3">
@@ -332,23 +318,53 @@ function PriceComparePanel({
         )}
       </button>
 
-      {error && (
-        <p className="text-red-500 text-xs mt-2 text-center">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-xs mt-2 text-center">{error}</p>}
 
       {open && data && (
-        <div className="mt-3 space-y-3 animate-in fade-in">
+        <div className="mt-3 space-y-3">
+          {/* 持ってる食材チェック */}
+          <div className="bg-purple-50 rounded-xl border border-purple-200 p-3">
+            <p className="text-xs font-semibold text-purple-700 mb-2">
+              🏠 持っている食材をチェック（合計から除外）
+              {ownedCount > 0 && (
+                <span className="ml-2 text-purple-500 font-normal">
+                  {ownedCount}品除外中
+                  <button
+                    onClick={() => setOwned(new Set())}
+                    className="ml-2 underline hover:text-purple-700"
+                  >
+                    リセット
+                  </button>
+                </span>
+              )}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {requiredIngredients.map((ing) => (
+                <button
+                  key={ing.ingredient_id}
+                  onClick={() => toggleOwned(ing.ingredient_id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                    owned.has(ing.ingredient_id)
+                      ? "bg-purple-600 text-white border-purple-600"
+                      : "bg-white text-purple-700 border-purple-200 hover:bg-purple-100"
+                  }`}
+                >
+                  {owned.has(ing.ingredient_id) ? "✓ " : ""}
+                  {ing.name_ja}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 合計金額カード */}
           <div className="grid grid-cols-3 gap-2">
-            {data.store_totals.map((st) => {
+            {adjustedTotals.map((st) => {
               const isCheapest = st.store === cheapest;
               return (
                 <div
                   key={st.store}
                   className={`relative rounded-xl border-2 p-3 text-center transition-all ${
-                    isCheapest
-                      ? "border-blue-400 bg-blue-50 ring-2 ring-blue-200"
-                      : STORE_BG_COLORS[st.store]
+                    isCheapest ? "border-blue-400 bg-blue-50 ring-2 ring-blue-200" : STORE_BG_COLORS[st.store]
                   }`}
                 >
                   {isCheapest && (
@@ -356,97 +372,62 @@ function PriceComparePanel({
                       BEST
                     </span>
                   )}
-                  <p
-                    className={`text-xs font-semibold mb-1 ${STORE_TEXT_COLORS[st.store]}`}
-                  >
-                    {st.label}
-                  </p>
-                  <p
-                    className={`text-xl font-bold ${
-                      isCheapest ? "text-blue-600" : "text-gray-800"
-                    }`}
-                  >
-                    {st.available_count === 0
-                      ? "---"
-                      : `$${st.total.toFixed(2)}`}
+                  <p className={`text-xs font-semibold mb-1 ${STORE_TEXT_COLORS[st.store]}`}>{st.label}</p>
+                  <p className={`text-xl font-bold ${isCheapest ? "text-blue-600" : "text-gray-800"}`}>
+                    {st.available_count === 0 ? "---" : `$${st.total.toFixed(2)}`}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {st.available_count}/{st.available_count + st.missing_count}{" "}
-                    品取得
+                    {st.available_count}/{st.available_count + st.missing_count} 品
                   </p>
                   {st.missing_count > 0 && (
-                    <p className="text-xs text-orange-500 mt-0.5">
-                      {st.missing_count}品 取得不可
-                    </p>
+                    <p className="text-xs text-orange-500 mt-0.5">{st.missing_count}品 取得不可</p>
                   )}
                 </div>
               );
             })}
           </div>
 
-          {/* 材料別の詳細テーブル */}
+          {/* 材料別テーブル */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-              <p className="text-xs font-semibold text-gray-600">
-                材料別 価格比較
-              </p>
+              <p className="text-xs font-semibold text-gray-600">材料別 価格比較</p>
             </div>
             <div className="divide-y divide-gray-100">
-              {data.ingredients
-                .filter((i) => !i.is_optional)
-                .map((ing) => (
-                  <div key={ing.ingredient_id} className="px-4 py-2">
+              {requiredIngredients.map((ing) => {
+                const isOwned = owned.has(ing.ingredient_id);
+                return (
+                  <div key={ing.ingredient_id} className={`px-4 py-2 ${isOwned ? "opacity-40" : ""}`}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-800">
-                        {ing.name_ja}
+                      <span className={`text-sm font-medium ${isOwned ? "line-through text-gray-400" : "text-gray-800"}`}>
+                        {isOwned ? "🏠 " : ""}{ing.name_ja}
                       </span>
-                      <span className="text-xs text-gray-400">
-                        {ing.quantity}
-                      </span>
+                      <span className="text-xs text-gray-400">{ing.quantity}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
-                      {(["woolworths", "paknsave", "newworld"] as StoreKey[]).map(
-                        (store) => {
-                          const product = ing.stores[store];
-                          const prices = (
-                            ["woolworths", "paknsave", "newworld"] as StoreKey[]
-                          )
-                            .map((s) => {
-                              const p = ing.stores[s];
-                              return p && p.in_stock
-                                ? p.sale_price ?? p.price
-                                : Infinity;
-                            });
-                          const minPrice = Math.min(...prices);
-                          const effectivePrice = product?.in_stock
-                            ? (product.sale_price ?? product.price)
-                            : null;
-                          const isLowest =
-                            effectivePrice !== null &&
-                            effectivePrice === minPrice &&
-                            minPrice < Infinity;
-
-                          return (
-                            <div
-                              key={store}
-                              className={`text-center py-1 px-1 rounded text-xs ${
-                                isLowest
-                                  ? "bg-blue-50 font-bold text-blue-600"
-                                  : "text-gray-500"
-                              }`}
-                            >
-                              {product && product.in_stock
-                                ? `$${(product.sale_price ?? product.price).toFixed(2)}`
-                                : product
-                                  ? "品切"
-                                  : "-"}
-                            </div>
-                          );
-                        }
-                      )}
+                      {(["woolworths", "paknsave", "newworld"] as StoreKey[]).map((store) => {
+                        const product = ing.stores[store];
+                        const prices = (["woolworths", "paknsave", "newworld"] as StoreKey[]).map((s) => {
+                          const p = ing.stores[s];
+                          return p && p.in_stock ? (p.sale_price ?? p.price) : Infinity;
+                        });
+                        const minPrice = Math.min(...prices);
+                        const effectivePrice = product?.in_stock ? (product.sale_price ?? product.price) : null;
+                        const isLowest = effectivePrice !== null && effectivePrice === minPrice && minPrice < Infinity;
+                        return (
+                          <div
+                            key={store}
+                            className={`text-center py-1 px-1 rounded text-xs ${
+                              isOwned ? "text-gray-300" : isLowest ? "bg-blue-50 font-bold text-blue-600" : "text-gray-500"
+                            }`}
+                          >
+                            {product && product.in_stock ? `$${(product.sale_price ?? product.price).toFixed(2)}` : product ? "品切" : "-"}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -455,13 +436,7 @@ function PriceComparePanel({
   );
 }
 
-function RecipeResult({
-  recipe,
-  loadingPrices,
-}: {
-  recipe: RecipeWithPricing;
-  loadingPrices: boolean;
-}) {
+function RecipeResult({ recipe, loadingPrices }: { recipe: RecipeWithPricing; loadingPrices: boolean }) {
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [stepsOpen, setStepsOpen] = useState(false);
 
@@ -473,20 +448,13 @@ function RecipeResult({
   const totalCount = recipe.ingredients.length;
 
   const dishEmojis: Record<string, string> = {
-    okonomiyaki: "🥞",
-    "curry-rice": "🍛",
-    "teriyaki-chicken": "🍗",
-    "miso-soup": "🥣",
-    oyakodon: "🍳",
-    nikujaga: "🥘",
-    karaage: "🍗",
-    ramen: "🍜",
+    okonomiyaki: "🥞", "curry-rice": "🍛", "teriyaki-chicken": "🍗",
+    "miso-soup": "🥣", oyakodon: "🍳", nikujaga: "🥘", karaage: "🍗", ramen: "🍜",
   };
   const emoji = dishEmojis[recipe.id] ?? "🍽️";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      {/* レシピヘッダー */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-400 px-5 py-4">
         <div className="flex items-center gap-3">
           <span className="text-3xl">{emoji}</span>
@@ -502,69 +470,34 @@ function RecipeResult({
           <span>🔥 調理 {recipe.cook_time}分</span>
         </div>
       </div>
-
-      {/* 材料リスト */}
       <div className="px-5 py-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-bold text-gray-800">
             材料リスト
-            <span className="ml-2 text-sm font-normal text-gray-400">
-              ({checkedCount}/{totalCount} チェック済み)
-            </span>
+            <span className="ml-2 text-sm font-normal text-gray-400">({checkedCount}/{totalCount} チェック済み)</span>
           </h3>
           {checkedCount > 0 && (
-            <button
-              onClick={() => setChecked({})}
-              className="text-xs text-gray-400 hover:text-orange-500 transition-colors"
-            >
-              リセット
-            </button>
+            <button onClick={() => setChecked({})} className="text-xs text-gray-400 hover:text-orange-500 transition-colors">リセット</button>
           )}
         </div>
-
-        {/* 必須食材 */}
         <div className="space-y-2">
-          {recipe.ingredients
-            .filter((i) => !i.optional)
-            .map((ingredient, idx) => {
-              const originalIdx = recipe.ingredients.indexOf(ingredient);
-              return (
-                <IngredientCard
-                  key={idx}
-                  ingredient={ingredient}
-                  checked={!!checked[originalIdx]}
-                  onToggle={() => toggleItem(originalIdx)}
-                  loadingPrices={loadingPrices}
-                />
-              );
-            })}
+          {recipe.ingredients.filter((i) => !i.optional).map((ingredient, idx) => {
+            const originalIdx = recipe.ingredients.indexOf(ingredient);
+            return <IngredientCard key={idx} ingredient={ingredient} checked={!!checked[originalIdx]} onToggle={() => toggleItem(originalIdx)} loadingPrices={loadingPrices} />;
+          })}
         </div>
-
-        {/* オプション食材 */}
         {recipe.ingredients.some((i) => i.optional) && (
           <div className="mt-3">
             <p className="text-xs text-gray-400 font-medium mb-2">お好みで</p>
             <div className="space-y-2">
-              {recipe.ingredients
-                .filter((i) => i.optional)
-                .map((ingredient, idx) => {
-                  const originalIdx = recipe.ingredients.indexOf(ingredient);
-                  return (
-                    <IngredientCard
-                      key={idx}
-                      ingredient={ingredient}
-                      checked={!!checked[originalIdx]}
-                      onToggle={() => toggleItem(originalIdx)}
-                      loadingPrices={loadingPrices}
-                    />
-                  );
-                })}
+              {recipe.ingredients.filter((i) => i.optional).map((ingredient, idx) => {
+                const originalIdx = recipe.ingredients.indexOf(ingredient);
+                return <IngredientCard key={idx} ingredient={ingredient} checked={!!checked[originalIdx]} onToggle={() => toggleItem(originalIdx)} loadingPrices={loadingPrices} />;
+              })}
             </div>
           </div>
         )}
       </div>
-
-      {/* 作り方（折りたたみ） */}
       <div className="border-t border-gray-100">
         <button
           onClick={() => setStepsOpen((v) => !v)}
@@ -573,15 +506,12 @@ function RecipeResult({
           <h3 className="text-base font-bold text-gray-800">作り方</h3>
           <span className="text-gray-400 text-lg">{stepsOpen ? "▲" : "▼"}</span>
         </button>
-
         {stepsOpen && (
           <div className="px-5 pb-5">
             <ol className="space-y-3">
               {recipe.steps.map((step, idx) => (
                 <li key={idx} className="flex gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-orange-100 text-orange-600 text-xs font-bold flex items-center justify-center mt-0.5">
-                    {idx + 1}
-                  </span>
+                  <span className="shrink-0 w-6 h-6 rounded-full bg-orange-100 text-orange-600 text-xs font-bold flex items-center justify-center mt-0.5">{idx + 1}</span>
                   <p className="text-sm text-gray-700 leading-relaxed">{step}</p>
                 </li>
               ))}
@@ -589,10 +519,212 @@ function RecipeResult({
           </div>
         )}
       </div>
-
-      {/* 価格比較パネル */}
       <div className="px-5 pb-4">
         <PriceComparePanel recipeId={recipe.id} recipeName={recipe.name_ja} />
+      </div>
+    </div>
+  );
+}
+
+function NearbyStoresPanel() {
+  const [stores, setStores] = useState<NearbyStore[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const getLocation = () => {
+    if (!navigator.geolocation) {
+      setError("位置情報がサポートされていません");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await fetch(
+            `/api/stores/nearby?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&limit=6`
+          );
+          const data = await res.json();
+          setStores(data.nearest ?? []);
+        } catch {
+          setError("店舗情報の取得に失敗しました");
+        } finally {
+          setLoading(false);
+        }
+      },
+      () => {
+        setError("位置情報の取得が拒否されました");
+        setLoading(false);
+      }
+    );
+  };
+
+  if (!stores && !loading) {
+    return (
+      <button
+        onClick={getLocation}
+        className="w-full py-3 px-4 rounded-xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-sm transition-all flex items-center justify-center gap-2"
+      >
+        📍 現在地から最寄りのスーパーを探す
+      </button>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="py-3 text-center text-sm text-gray-400">
+        <span className="animate-spin inline-block w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full mr-2" />
+        位置情報を取得中...
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="text-red-500 text-xs text-center py-2">{error}</p>;
+  }
+
+  const brandColors: Record<StoreKey, string> = {
+    woolworths: "border-green-300 bg-green-50",
+    paknsave: "border-yellow-300 bg-yellow-50",
+    newworld: "border-red-300 bg-red-50",
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-gray-600">📍 最寄りのスーパー</p>
+      <div className="grid grid-cols-2 gap-2">
+        {(stores ?? []).map((store) => (
+          <div
+            key={store.id}
+            className={`rounded-xl border-2 p-2.5 ${brandColors[store.brand]}`}
+          >
+            <p className="text-xs font-bold text-gray-800">{store.name}</p>
+            <p className="text-xs text-gray-500">{store.address}</p>
+            <p className="text-xs font-semibold text-blue-600 mt-1">
+              {store.distance_km} km
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AIChatPanel() {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
+  }, [messages]);
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg: ChatMessage = { role: "user", content: input.trim() };
+    const updated = [...messages, userMsg];
+    setMessages(updated);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: updated }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+      } else if (data.error) {
+        setMessages((prev) => [...prev, { role: "assistant", content: data.error }]);
+      }
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "接続エラーが発生しました。もう一度お試しください。" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-all z-50"
+      >
+        🤖
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-6 right-6 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 overflow-hidden" style={{ height: "28rem" }}>
+      <div className="bg-orange-500 px-4 py-3 flex items-center justify-between shrink-0">
+        <div>
+          <p className="text-white font-bold text-sm">🤖 レシピ相談</p>
+          <p className="text-orange-100 text-xs">NZで作れる料理を提案します</p>
+        </div>
+        <button onClick={() => setOpen(false)} className="text-white text-xl hover:text-orange-200">✕</button>
+      </div>
+
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+        {messages.length === 0 && (
+          <div className="text-center py-6">
+            <p className="text-gray-400 text-xs mb-3">例えば...</p>
+            {["冷蔵庫に卵と玉ねぎがある。何が作れる？", "NZで手に入りやすい日本料理は？", "カレーの隠し味を教えて"].map((q) => (
+              <button
+                key={q}
+                onClick={() => { setInput(q); }}
+                className="block w-full text-left text-xs text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mb-1.5 hover:bg-orange-100 transition-colors"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
+        {messages.map((msg, i) => (
+          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+                msg.role === "user" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-800"
+              }`}
+            >
+              {msg.content}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 rounded-xl px-3 py-2 text-sm text-gray-400">考え中...</div>
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-gray-100 px-3 py-2 shrink-0">
+        <form
+          onSubmit={(e) => { e.preventDefault(); send(); }}
+          className="flex gap-2"
+        >
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="質問を入力..."
+            className="flex-1 text-sm px-3 py-2 rounded-xl border border-gray-200 focus:border-orange-300 focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || loading}
+            className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm px-3 py-2 rounded-xl transition-colors"
+          >
+            送信
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -618,9 +750,7 @@ export default function HomePage() {
       setLoading(true);
       setSearched(true);
       try {
-        const res = await fetch(
-          `/api/recipes/search?q=${encodeURIComponent(q)}&store=${store}`
-        );
+        const res = await fetch(`/api/recipes/search?q=${encodeURIComponent(q)}&store=${store}`);
         const data: SearchResponse = await res.json();
         setSearchResult(data);
       } finally {
@@ -630,49 +760,27 @@ export default function HomePage() {
     [selectedStore]
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    doSearch(query);
-  };
-
-  const handleSuggestionClick = (name: string) => {
-    setQuery(name);
-    doSearch(name);
-  };
-
+  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); doSearch(query); };
+  const handleSuggestionClick = (name: string) => { setQuery(name); doSearch(name); };
   const handleStoreChange = (store: StoreKey) => {
     setSelectedStore(store);
-    // 検索済みの場合は即再取得
-    if (searched && query.trim()) {
-      doSearch(query, store);
-    }
+    if (searched && query.trim()) doSearch(query, store);
   };
-
-  const clearSearch = () => {
-    setQuery("");
-    setSearchResult(null);
-    setSearched(false);
-  };
+  const clearSearch = () => { setQuery(""); setSearchResult(null); setSearched(false); };
 
   return (
     <div className="min-h-screen bg-orange-50">
-      {/* ヘッダー */}
       <header className="bg-white border-b border-orange-100 sticky top-0 z-10 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
           <span className="text-2xl">🍱</span>
           <div>
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">
-              NZ Recipe Helper
-            </h1>
-            <p className="text-xs text-gray-500">
-              NZスーパーで日本料理の材料を見つけよう
-            </p>
+            <h1 className="text-lg font-bold text-gray-900 leading-tight">NZ Recipe Helper</h1>
+            <p className="text-xs text-gray-500">NZスーパーで日本料理の材料を見つけよう</p>
           </div>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* ヒーローセクション */}
         {!searched && (
           <div className="text-center mb-6">
             <p className="text-gray-600 text-base leading-relaxed">
@@ -681,7 +789,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 検索バー */}
         <form onSubmit={handleSubmit} className="relative mb-5">
           <input
             type="text"
@@ -690,9 +797,7 @@ export default function HomePage() {
             placeholder="料理名を入力（例：カレーライス）"
             className="w-full pl-12 pr-24 py-3.5 rounded-2xl border-2 border-orange-200 focus:border-orange-400 focus:outline-none bg-white text-gray-800 placeholder-gray-400 text-base shadow-sm"
           />
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400 text-xl">
-            🔍
-          </span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400 text-xl">🔍</span>
           <button
             type="submit"
             disabled={!query.trim() || loading}
@@ -702,10 +807,13 @@ export default function HomePage() {
           </button>
         </form>
 
-        {/* ストアセレクタ */}
         <StoreTabs selected={selectedStore} onChange={handleStoreChange} />
 
-        {/* サジェストピル */}
+        {/* 最寄り店舗 */}
+        <div className="mb-5">
+          <NearbyStoresPanel />
+        </div>
+
         {suggestions.length > 0 && (
           <div className="mb-6">
             <p className="text-xs text-gray-400 font-medium mb-2">
@@ -725,55 +833,38 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 空状態 */}
         {!searched && (
           <div className="text-center py-12">
             <div className="text-5xl mb-4">🛒</div>
-            <p className="text-gray-400 text-sm">
-              作りたい料理を検索するか、上のボタンから選んでください
-            </p>
+            <p className="text-gray-400 text-sm">作りたい料理を検索するか、上のボタンから選んでください</p>
           </div>
         )}
 
-        {/* ローディング */}
         {loading && (
           <div className="text-center py-12">
             <div className="text-4xl mb-3 animate-bounce">🍳</div>
-            <p className="text-gray-400 text-sm">
-              レシピと{STORE_LABELS[selectedStore]}の価格を取得中...
-            </p>
+            <p className="text-gray-400 text-sm">レシピと{STORE_LABELS[selectedStore]}の価格を取得中...</p>
           </div>
         )}
 
-        {/* 検索結果 */}
         {!loading && searched && searchResult && (
           <div>
-            {/* 結果なし */}
             {searchResult.results?.length === 0 && (
               <div className="bg-white rounded-2xl p-6 text-center border border-gray-100 shadow-sm mb-4">
                 <div className="text-4xl mb-3">🤔</div>
                 <p className="text-gray-600 font-medium mb-1">
                   {searchResult.message ?? "レシピが見つかりませんでした"}
                 </p>
-                <p className="text-gray-400 text-sm">
-                  上のボタンから選んでみてください
-                </p>
+                <p className="text-gray-400 text-sm">上のボタンから選んでみてください</p>
               </div>
             )}
-
-            {/* レシピ一覧 */}
             {(searchResult.results ?? []).map((recipe) => (
               <div key={recipe.id} className="mb-5">
                 <RecipeResult recipe={recipe} loadingPrices={false} />
               </div>
             ))}
-
-            {/* 戻るボタン */}
             <div className="text-center mt-4">
-              <button
-                onClick={clearSearch}
-                className="text-sm text-gray-400 hover:text-orange-500 transition-colors"
-              >
+              <button onClick={clearSearch} className="text-sm text-gray-400 hover:text-orange-500 transition-colors">
                 ← 最初に戻る
               </button>
             </div>
@@ -781,10 +872,11 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* フッター */}
       <footer className="text-center py-6 text-xs text-gray-400">
         NZ Recipe Helper — Pak&apos;nSave / New World / Woolworths 対応
       </footer>
+
+      <AIChatPanel />
     </div>
   );
 }
