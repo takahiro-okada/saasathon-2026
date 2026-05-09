@@ -34,5 +34,12 @@
     "playwright": "^1.59.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

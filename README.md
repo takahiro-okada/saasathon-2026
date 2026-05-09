@@ -1,7 +1,14 @@
-![CI Status](https://github.com/takahiro-okada/saasathon-2026/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/takahiro-okada/saasathon-2026/actions/workflows/ci.yml/badge.svg)](https://github.com/takahiro-okada/saasathon-2026/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/takahiro-okada/saasathon-2026/actions/workflows/codeql.yml/badge.svg)](https://github.com/takahiro-okada/saasathon-2026/actions/workflows/codeql.yml)
+[![Lighthouse CI](https://github.com/takahiro-okada/saasathon-2026/actions/workflows/lighthouse.yml/badge.svg)](https://github.com/takahiro-okada/saasathon-2026/actions/workflows/lighthouse.yml)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
-![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white)
+![Claude](https://img.shields.io/badge/Claude-Sonnet%20%2B%20Haiku-D97757?logo=anthropic&logoColor=white)
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://saasathon-2026.vercel.app)
+![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)
 
 # ShopMate
 
