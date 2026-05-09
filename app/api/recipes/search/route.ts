@@ -79,7 +79,7 @@ Rules:
 - ONLY list raw ingredients that can be purchased at NZ supermarkets (Woolworths, Pak'nSave, New World)
 - NEVER list cooked/prepared items like "cooked rice", "boiled noodles", "steamed vegetables" — list the raw form instead (e.g. "rice" not "cooked rice", "ramen noodles" not "cooked ramen")
 - NEVER list "water" as an ingredient
-- search_query MUST be a simple English product name that a supermarket search engine would return results for (e.g. "rice", "soy sauce", "chicken thigh", "plain flour"). Avoid obscure terms
+- search_query MUST be the SIMPLEST possible English product name (1-2 words max) that a supermarket search engine would return results for. Use generic terms, NOT specific varieties. Examples: "rice" (NOT "jasmine rice" or "Japanese short grain rice"), "soy sauce" (NOT "Japanese soy sauce"), "chicken thigh", "flour" (NOT "plain flour" or "all purpose flour"), "oil" (NOT "vegetable oil"), "onion", "garlic", "ginger", "egg"
 - aisle MUST be in English
 - Include 5-12 ingredients
 - All user-facing text (description, steps, ingredient names in name_ja, quantity) MUST be in ${lc.label}
