@@ -1,4 +1,4 @@
--- NZ Recipe Helper - Seed Data: Ingredients (38 items)
+-- ShopMate - Seed Data: Ingredients (38 items)
 
 INSERT INTO ingredients (id, name_ja, name_en, search_query, category, aisle, is_optional) VALUES
 ('02c110bf-1829-4d4c-8aeb-1c6b44091179', '小麦粉', 'Plain Flour', 'plain flour', '粉類', 'Baking aisle', false),

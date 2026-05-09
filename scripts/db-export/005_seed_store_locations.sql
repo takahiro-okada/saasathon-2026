@@ -1,4 +1,4 @@
--- NZ Recipe Helper - Seed Data: Store Locations (20 Christchurch stores)
+-- ShopMate - Seed Data: Store Locations (20 Christchurch stores)
 
 INSERT INTO store_locations (id, brand, name, slug, address, lat, lng, foodstuffs_store_id) VALUES
 -- Woolworths (7)

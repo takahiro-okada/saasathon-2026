@@ -1,6 +1,6 @@
 # Database Export / Import
 
-NZ Recipe Helper のデータベースを別の Supabase プロジェクトに移行する手順。
+ShopMate のデータベースを別の Supabase プロジェクトに移行する手順。
 
 ## セットアップ手順
 

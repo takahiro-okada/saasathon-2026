@@ -9,9 +9,9 @@ export const LOCALE_LABELS: Record<Locale, string> = {
 const translations = {
   // Header
   "header.title": {
-    en: "NZ Recipe Helper",
-    ja: "NZ Recipe Helper",
-    zh: "NZ Recipe Helper",
+    en: "ShopMate",
+    ja: "ShopMate",
+    zh: "ShopMate",
   },
   "header.subtitle": {
     en: "Find Japanese cooking ingredients at NZ supermarkets",
@@ -339,9 +339,9 @@ const translations = {
 
   // Footer
   "footer.text": {
-    en: "NZ Recipe Helper — Pak'nSave / New World / Woolworths",
-    ja: "NZ Recipe Helper — Pak'nSave / New World / Woolworths 対応",
-    zh: "NZ Recipe Helper — 支持 Pak'nSave / New World / Woolworths",
+    en: "ShopMate — Pak'nSave / New World / Woolworths",
+    ja: "ShopMate — Pak'nSave / New World / Woolworths 対応",
+    zh: "ShopMate — 支持 Pak'nSave / New World / Woolworths",
   },
 } as const;
 

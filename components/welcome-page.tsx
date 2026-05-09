@@ -13,7 +13,7 @@ export function WelcomePage({ onGetStarted }: { onGetStarted: () => void }) {
         <div className="flex flex-col items-center gap-3">
           <BowlIcon />
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-[#2D2D2D]">NZ Recipe Helper</h1>
+            <h1 className="text-2xl font-bold text-[#2D2D2D]">ShopMate</h1>
             <p className="text-sm text-[#5A5A5A] mt-1">Cook with confidence in New Zealand</p>
           </div>
         </div>

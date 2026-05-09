@@ -1,4 +1,4 @@
-# NZ Recipe Helper - Design System
+# ShopMate - Design System
 
 ## Design Philosophy
 Warm, organic, NZ-inspired. Japanese cuisine meets New Zealand nature.
