@@ -1115,9 +1115,11 @@ function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIn
             </div>
           </div>
 
-          {/* 合計金額カード */}
+          {/* 合計金額カード — fixed order: Woolworths, Pak'nSave, New World */}
           <div className="grid grid-cols-3 gap-2">
-            {adjustedTotals.map((st) => {
+            {(["woolworths", "paknsave", "newworld"] as StoreKey[]).map((store) => {
+              const st = adjustedTotals.find((t) => t.store === store);
+              if (!st) return null;
               const isCheapest = st.store === cheapest;
               return (
                 <div
@@ -1152,18 +1154,9 @@ function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIn
               <p className="text-xs font-semibold text-gray-600">{t("compare.perItemTitle", locale)}</p>
             </div>
             <div className="divide-y divide-gray-100">
-              {/* Store header row matching total card order */}
-              <div className="px-4 py-2 grid grid-cols-[1fr_repeat(3,60px)] gap-1 items-center">
-                <span />
-                {adjustedTotals.map((st) => (
-                  <span key={st.store} className={`text-center text-xs font-semibold ${STORE_TEXT_COLORS[st.store]}`}>
-                    {st.label}
-                  </span>
-                ))}
-              </div>
               {requiredIngredients.map((ing) => {
                 const isOwned = owned.has(ing.ingredient_id);
-                const storeOrder = adjustedTotals.map((st) => st.store);
+                const storeOrder: StoreKey[] = ["woolworths", "paknsave", "newworld"];
                 const prices = storeOrder.map((s) => {
                   const p = ing.stores[s];
                   return p && p.in_stock ? (p.sale_price ?? p.price) : Infinity;
@@ -1177,8 +1170,7 @@ function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIn
                       </span>
                       <span className="text-xs text-gray-400">{tq(ing.quantity, locale)}</span>
                     </div>
-                    <div className="grid grid-cols-[1fr_repeat(3,60px)] gap-1">
-                      <span />
+                    <div className="grid grid-cols-3 gap-1">
                       {storeOrder.map((store) => {
                         const product = ing.stores[store];
                         const effectivePrice = product?.in_stock ? (product.sale_price ?? product.price) : null;
