@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import type { RecipeWithPricing, IngredientWithPricing } from "@/app/lib/recipes";
-import { t, LOCALE_LABELS, recipeName, recipeDescription, ingredientName, quantity as tq, type Locale } from "@/app/lib/i18n";
+import { t, LOCALE_LABELS, recipeName, recipeDescription, ingredientName, getSubstitution, quantity as tq, type Locale } from "@/app/lib/i18n";
 
 type StoreKey = "woolworths" | "paknsave" | "newworld";
 
@@ -289,6 +289,20 @@ function IngredientCard({
           )}
         </div>
         <p className="text-xs text-gray-400 mt-0.5">💡 {ingredient.aisle}</p>
+        {(() => {
+          const sub = getSubstitution(ingredient.name_ja, locale);
+          if (!sub) return null;
+          const isOutOfStock = live && !live.inStock;
+          return (
+            <p className={`text-xs mt-1 px-2 py-1 rounded-lg ${
+              isOutOfStock
+                ? "bg-amber-100 text-amber-700 border border-amber-200"
+                : "bg-sky-50 text-sky-600 border border-sky-200"
+            }`}>
+              🔄 {sub}
+            </p>
+          );
+        })()}
       </div>
     </div>
   );

@@ -497,6 +497,75 @@ export function recipeDescription(description: string, locale: Locale, recipeId?
   return description;
 }
 
+const substitutions: Record<string, { en: string; ja: string; zh: string }> = {
+  "三つ葉": {
+    en: "Use parsley or coriander instead",
+    ja: "パセリやコリアンダーで代用可",
+    zh: "可用欧芹或香菜代替",
+  },
+  "メンマ": {
+    en: "Use canned bamboo shoots instead",
+    ja: "水煮たけのこで代用可",
+    zh: "可用罐装竹笋代替",
+  },
+  "糸こんにゃく": {
+    en: "Use glass noodles (vermicelli) instead",
+    ja: "春雨で代用可",
+    zh: "可用粉丝代替",
+  },
+  "天かす": {
+    en: "Crumble tempura bits or skip — still delicious",
+    ja: "なくてもOK、砕いたクラッカーで代用可",
+    zh: "可省略，或用碎饼干代替",
+  },
+  "紅生姜": {
+    en: "Use pickled ginger (sushi ginger) instead",
+    ja: "ガリ（寿司生姜）で代用可",
+    zh: "可用寿司姜代替",
+  },
+  "青のり": {
+    en: "Use crushed nori seaweed instead",
+    ja: "刻み海苔で代用可",
+    zh: "可用碎海苔代替",
+  },
+  "かつお節": {
+    en: "Available in Asian aisle, or skip",
+    ja: "アジアン食品コーナーにあることも。なくてもOK",
+    zh: "亚洲食品区可能有，也可省略",
+  },
+  "だし粉": {
+    en: "Use chicken stock powder as a substitute",
+    ja: "チキンストックパウダーで代用可",
+    zh: "可用鸡汤粉代替",
+  },
+  "お好み焼きソース": {
+    en: "Mix BBQ sauce + Worcestershire + ketchup",
+    ja: "BBQソース+ウスター+ケチャップで代用可",
+    zh: "可用BBQ酱+伍斯特酱+番茄酱调配",
+  },
+  "みりん": {
+    en: "Mix 1 tbsp sugar + 1 tbsp water as substitute",
+    ja: "砂糖大さじ1+水大さじ1で代用可",
+    zh: "可用1大勺糖+1大勺水代替",
+  },
+  "片栗粉": {
+    en: "Use cornstarch — works the same way",
+    ja: "コーンスターチで代用可",
+    zh: "可用玉米淀粉代替",
+  },
+  "酒": {
+    en: "Use dry white wine or dry sherry instead",
+    ja: "辛口白ワインやドライシェリーで代用可",
+    zh: "可用干白葡萄酒代替",
+  },
+};
+
+export function getSubstitution(nameJa: string, locale: Locale): string | null {
+  const sub = substitutions[nameJa];
+  if (!sub) return null;
+  return sub[locale];
+}
+
 export function ingredientName(nameJa: string, nameEn: string, locale: Locale): string {
   if (locale === "ja") return nameJa;
   if (locale === "zh") return ingredientNamesZh[nameJa] ?? nameJa;
