@@ -9,11 +9,9 @@ import { ONBOARDING_STEPS } from "@/constants/onboarding";
 import { logActivity } from "@/lib/activity";
 import { WelcomePage } from "@/components/welcome-page";
 import { OnboardingOverlay } from "@/components/onboarding-overlay";
-import { BottomNav } from "@/components/bottom-nav";
 import { LanguageToggle } from "@/components/language-toggle";
 import { StoreTabs } from "@/components/store-tabs";
 import { RecipeResult } from "@/components/recipe-result";
-import { AIChatPanel } from "@/components/ai-chat-panel";
 
 export default function HomePage() {
   // 1. Initial states set to neutral values to match Server-Side Rendering
@@ -28,7 +26,6 @@ export default function HomePage() {
   const [searched, setSearched] = useState(false);
   const [selectedStore, setSelectedStore] = useState<StoreKey>("woolworths");
   const [locale, setLocale] = useState<Locale>("en");
-  const [checkedIngredientCount, setCheckedIngredientCount] = useState(0);
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
 
@@ -91,10 +88,6 @@ export default function HomePage() {
   };
   const clearSearch = () => { setQuery(""); setSearchResult(null); setSearched(false); };
 
-  useEffect(() => {
-    setCheckedIngredientCount(0);
-  }, [searchResult]);
-
   const handleGetStarted = () => {
     setShowWelcome(false);
     setOnboardingStep(0);
@@ -141,7 +134,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
+      <main className="max-w-2xl mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="relative mb-5" data-onboarding="step-1">
           <input
             type="text"
@@ -222,10 +215,6 @@ export default function HomePage() {
         )}
       </main>
 
-      <div data-onboarding="step-5">
-        <BottomNav checkedCount={checkedIngredientCount} />
-      </div>
-      <AIChatPanel locale={locale} showWelcome={showWelcome} />
       {onboardingStep !== null && (
         <OnboardingOverlay
           step={onboardingStep}

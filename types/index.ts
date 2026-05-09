@@ -76,11 +76,6 @@ export interface NearbyStore {
   address: string;
 }
 
-export interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
 export interface OnboardingStep {
   target: string;
   title: string;
