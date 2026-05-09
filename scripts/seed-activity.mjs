@@ -1,4 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const { createClient } = require("@supabase/supabase-js");
 
 // 接続情報（環境変数優先、フォールバックあり）
 const SUPABASE_URL =

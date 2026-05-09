@@ -110,7 +110,8 @@ Return ONLY valid JSON array, no markdown:
       messages: [{ role: "user", content: prompt }],
     });
 
-    const text = msg.content[0].type === "text" ? msg.content[0].text : "";
+    let text = msg.content[0].type === "text" ? msg.content[0].text : "";
+    text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
     const insights = JSON.parse(text);
 
     return Response.json({ insights, activity_count: typedActivities.length });
