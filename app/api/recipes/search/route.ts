@@ -25,11 +25,26 @@ export async function GET(request: NextRequest) {
     return Response.json({ results: [], suggestions: [] });
   }
 
-  // レシピ検索（部分一致）
+  const zhToId: Record<string, string> = {
+    "大阪烧": "okonomiyaki", "咖喱饭": "curry-rice", "咖喱": "curry-rice",
+    "照烧鸡肉": "teriyaki-chicken", "照烧鸡": "teriyaki-chicken", "照烧": "teriyaki-chicken",
+    "味噌汤": "miso-soup", "味噌": "miso-soup",
+    "亲子丼": "oyakodon", "亲子饭": "oyakodon",
+    "土豆炖肉": "nikujaga", "炖肉": "nikujaga",
+    "日式炸鸡": "karaage", "炸鸡": "karaage",
+    "拉面": "ramen", "拉麵": "ramen",
+  };
+
+  const zhMatch = zhToId[query.trim()];
+  let recipeFilter = `name_ja.ilike.%${query}%,name_en.ilike.%${query}%`;
+  if (zhMatch) {
+    recipeFilter += `,id.eq.${zhMatch}`;
+  }
+
   const { data: recipes } = await supabase
     .from("recipes")
     .select("*")
-    .or(`name_ja.ilike.%${query}%,name_en.ilike.%${query}%`);
+    .or(recipeFilter);
 
   if (!recipes || recipes.length === 0) {
     const { data: allRecipes } = await supabase
