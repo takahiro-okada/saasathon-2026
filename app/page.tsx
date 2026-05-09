@@ -31,6 +31,7 @@ export default function HomePage() {
 
   // 2. Handle Hydration: Only check localStorage after the component mounts in the browser
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasMounted(true);
     const isDone = localStorage.getItem("nzrh_onboarding_done");
     if (isDone !== "true") {
