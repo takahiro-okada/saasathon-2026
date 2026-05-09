@@ -1009,7 +1009,7 @@ export default function HomePage() {
       setLoading(true);
       setSearched(true);
       try {
-        const res = await fetch(`/api/recipes/search?q=${encodeURIComponent(q)}&store=${store}`);
+        const res = await fetch(`/api/recipes/search?q=${encodeURIComponent(q)}&store=${store}&locale=${locale}`);
         const data: SearchResponse = await res.json();
         setSearchResult(data);
         if (data.results?.length) {

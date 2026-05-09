@@ -35,11 +35,20 @@ function getSearchFn(store: StoreKey): (q: string) => Promise<SupermarketProduct
   }
 }
 
-async function generateRecipeWithAI(query: string): Promise<AIRecipe | null> {
+type Locale = "en" | "ja" | "zh";
+
+const LOCALE_CONFIG: Record<Locale, { label: string; descLang: string; stepsLang: string; qtyFormat: string; ingredientLang: string }> = {
+  en: { label: "English", descLang: "English", stepsLang: "English", qtyFormat: "e.g. 200g, 2 tbsp, 1 piece", ingredientLang: "English" },
+  ja: { label: "Japanese", descLang: "Japanese", stepsLang: "Japanese", qtyFormat: "e.g. 200g, 大さじ2, 1個", ingredientLang: "Japanese" },
+  zh: { label: "Chinese (Simplified)", descLang: "Chinese (Simplified)", stepsLang: "Chinese (Simplified)", qtyFormat: "e.g. 200g, 2大勺, 1个", ingredientLang: "Chinese (Simplified)" },
+};
+
+async function generateRecipeWithAI(query: string, locale: Locale = "en"): Promise<AIRecipe | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
   const anthropic = new Anthropic({ apiKey });
+  const lc = LOCALE_CONFIG[locale];
 
   const prompt = `You are a Japanese cooking expert. Generate a recipe for "${query}".
 The input may be in any language (English, Japanese, Chinese, etc.) — interpret it as a dish name.
@@ -47,20 +56,20 @@ The input may be in any language (English, Japanese, Chinese, etc.) — interpre
 Return ONLY valid JSON (no markdown, no code fences):
 {
   "id": "kebab-style-id",
-  "name_ja": "Japanese name",
-  "name_en": "English name",
-  "description": "Japanese description of the dish",
+  "name_ja": "Name in ${lc.ingredientLang}",
+  "name_en": "Name in English",
+  "description": "Description in ${lc.descLang}",
   "servings": 2,
   "prep_time": 15,
   "cook_time": 20,
-  "steps": ["step 1 in Japanese", "step 2"],
+  "steps": ["step 1 in ${lc.stepsLang}", "step 2 in ${lc.stepsLang}"],
   "ingredients": [
     {
-      "name_ja": "Japanese ingredient name",
-      "name_en": "English ingredient name",
-      "quantity": "quantity in Japanese format (e.g. 200g, 大さじ2, 1個)",
+      "name_ja": "Ingredient name in ${lc.ingredientLang}",
+      "name_en": "Ingredient name in English",
+      "quantity": "quantity (${lc.qtyFormat})",
       "search_query": "English search term for NZ supermarket (e.g. chicken thigh, soy sauce)",
-      "aisle": "where to find in NZ supermarket (e.g. Asian aisle, Produce section, Meat section)",
+      "aisle": "where to find in NZ supermarket in English (e.g. Asian aisle, Produce section, Meat section)",
       "optional": false
     }
   ]
@@ -68,14 +77,16 @@ Return ONLY valid JSON (no markdown, no code fences):
 
 Rules:
 - Use common ingredients available at NZ supermarkets (Woolworths, Pak'nSave, New World)
-- search_query must be simple English product names that would match supermarket search
+- search_query MUST be simple English product names that would match supermarket search
+- aisle MUST be in English
 - Include 5-12 ingredients
-- Steps should be in Japanese
+- All user-facing text (description, steps, ingredient names in name_ja, quantity) MUST be in ${lc.label}
+- name_en and search_query MUST always be in English
 - If the input is not a real dish, return null`;
 
   try {
     const msg = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-sonnet-4-6",
       max_tokens: 2000,
       messages: [{ role: "user", content: prompt }],
     });
@@ -96,6 +107,10 @@ export async function GET(request: NextRequest) {
   const store: StoreKey = ["woolworths", "paknsave", "newworld"].includes(storeParam)
     ? storeParam
     : "woolworths";
+  const localeParam = searchParams.get("locale") ?? "en";
+  const locale: Locale = (["en", "ja", "zh"] as const).includes(localeParam as Locale)
+    ? (localeParam as Locale)
+    : "en";
 
   if (!query.trim()) {
     return Response.json({ results: [], suggestions: [] });
@@ -176,7 +191,7 @@ export async function GET(request: NextRequest) {
   }
 
   // AI generates recipe for any dish in any language
-  const aiRecipe = await generateRecipeWithAI(query);
+  const aiRecipe = await generateRecipeWithAI(query, locale);
 
   if (!aiRecipe) {
     return Response.json({
@@ -202,8 +217,8 @@ export async function GET(request: NextRequest) {
 
       return {
         ingredient_id: ingredientId ?? undefined,
-        name_ja: matched?.name_ja ?? aiIng.name_ja,
-        name_en: matched?.name_en ?? aiIng.name_en,
+        name_ja: aiIng.name_ja,
+        name_en: aiIng.name_en,
         nz_product: aiIng.name_en,
         quantity: aiIng.quantity,
         aisle: matched?.aisle ?? aiIng.aisle,

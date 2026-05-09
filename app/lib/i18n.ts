@@ -366,6 +366,10 @@ const recipeNamesZh: Record<string, string> = {
   "nikujaga": "土豆炖肉",
   "karaage": "日式炸鸡",
   "ramen": "拉面",
+  "gyoza": "饺子",
+  "tonkatsu": "炸猪排",
+  "takoyaki": "章鱼烧",
+  "udon": "乌冬面",
 };
 
 const recipeDescriptionsEn: Record<string, string> = {
