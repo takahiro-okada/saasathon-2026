@@ -138,6 +138,333 @@ const STORE_TEXT_COLORS: Record<StoreKey, string> = {
   newworld: "text-red-700",
 };
 
+// ---- Decorative SVG Components ----
+
+function BlobShape() {
+  return (
+    <svg
+      className="absolute top-0 left-0 w-48 h-48 opacity-80"
+      viewBox="0 0 200 200"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fill="#EDE8DF"
+        d="M44.2,-56.8C56.3,-46.2,64,-30.2,67.1,-13.2C70.2,3.8,68.7,21.7,60.5,35.5C52.3,49.3,37.4,59,20.8,65.1C4.2,71.2,-14.1,73.7,-28.7,67.4C-43.3,61.1,-54.2,46.1,-61.2,29.4C-68.2,12.7,-71.4,-5.7,-66.5,-21.6C-61.7,-37.5,-48.9,-51,-34.4,-60.9C-19.9,-70.8,-3.7,-77.1,10.8,-74.8C25.3,-72.5,32.1,-67.4,44.2,-56.8Z"
+        transform="translate(80 80)"
+      />
+    </svg>
+  );
+}
+
+function CherryBlossomBranch() {
+  return (
+    <svg
+      className="absolute top-2 left-2 w-44 h-44 opacity-90"
+      viewBox="0 0 180 180"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Main branch */}
+      <path d="M10 170 Q50 120 80 80 Q100 50 120 20" stroke="#8BAF7E" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      {/* Sub branches */}
+      <path d="M60 110 Q75 90 90 75" stroke="#8BAF7E" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      <path d="M40 140 Q55 125 65 110" stroke="#8BAF7E" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      {/* Flower 1 */}
+      <g transform="translate(120, 20)">
+        <circle cx="0" cy="-8" r="5" fill="#D4A0A0" opacity="0.85" />
+        <circle cx="7.6" cy="-2.5" r="5" fill="#D4A0A0" opacity="0.85" />
+        <circle cx="4.7" cy="7" r="5" fill="#D4A0A0" opacity="0.85" />
+        <circle cx="-4.7" cy="7" r="5" fill="#D4A0A0" opacity="0.85" />
+        <circle cx="-7.6" cy="-2.5" r="5" fill="#D4A0A0" opacity="0.85" />
+        <circle cx="0" cy="0" r="3" fill="#F5E6E6" />
+      </g>
+      {/* Flower 2 */}
+      <g transform="translate(90, 75)">
+        <circle cx="0" cy="-7" r="4.5" fill="#D4A0A0" opacity="0.8" />
+        <circle cx="6.7" cy="-2.2" r="4.5" fill="#D4A0A0" opacity="0.8" />
+        <circle cx="4.1" cy="6" r="4.5" fill="#D4A0A0" opacity="0.8" />
+        <circle cx="-4.1" cy="6" r="4.5" fill="#D4A0A0" opacity="0.8" />
+        <circle cx="-6.7" cy="-2.2" r="4.5" fill="#D4A0A0" opacity="0.8" />
+        <circle cx="0" cy="0" r="2.5" fill="#F5E6E6" />
+      </g>
+      {/* Flower 3 (smaller) */}
+      <g transform="translate(65, 110)">
+        <circle cx="0" cy="-6" r="4" fill="#D4A0A0" opacity="0.75" />
+        <circle cx="5.7" cy="-1.9" r="4" fill="#D4A0A0" opacity="0.75" />
+        <circle cx="3.5" cy="5.1" r="4" fill="#D4A0A0" opacity="0.75" />
+        <circle cx="-3.5" cy="5.1" r="4" fill="#D4A0A0" opacity="0.75" />
+        <circle cx="-5.7" cy="-1.9" r="4" fill="#D4A0A0" opacity="0.75" />
+        <circle cx="0" cy="0" r="2" fill="#F5E6E6" />
+      </g>
+      {/* Fallen petal */}
+      <ellipse cx="150" cy="50" rx="5" ry="3" fill="#D4A0A0" opacity="0.5" transform="rotate(-30 150 50)" />
+    </svg>
+  );
+}
+
+function WavePattern() {
+  // Seigaiha (overlapping wave/scale) pattern as SVG
+  const svgString = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='20'><path d='M0 20 Q10 0 20 20 Q30 0 40 20' fill='none' stroke='%23EDE8DF' stroke-width='1.5'/></svg>`;
+  const dataUri = `data:image/svg+xml,${svgString}`;
+  return (
+    <div
+      className="absolute bottom-0 left-0 right-0 h-24 opacity-60"
+      style={{
+        backgroundImage: `url("${dataUri}")`,
+        backgroundRepeat: "repeat-x",
+        backgroundPosition: "bottom",
+        backgroundSize: "40px 20px",
+      }}
+    />
+  );
+}
+
+function BowlIcon() {
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Steam lines */}
+      <path d="M20 14 Q22 8 20 2" stroke="#4A6741" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M32 12 Q34 6 32 0" stroke="#4A6741" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M44 14 Q46 8 44 2" stroke="#4A6741" strokeWidth="2" strokeLinecap="round" fill="none" />
+      {/* Bowl body */}
+      <path d="M8 28 Q8 52 32 52 Q56 52 56 28 Z" fill="#4A6741" opacity="0.15" />
+      <path d="M8 28 Q8 52 32 52 Q56 52 56 28" stroke="#4A6741" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      {/* Bowl rim */}
+      <ellipse cx="32" cy="28" rx="24" ry="6" stroke="#4A6741" strokeWidth="2.5" fill="white" />
+      {/* Bowl base */}
+      <path d="M22 52 L26 58 L38 58 L42 52" stroke="#4A6741" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <line x1="26" y1="58" x2="38" y2="58" stroke="#4A6741" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function FernLeafIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 18 Q10 10 10 2" stroke="#4A6741" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M10 14 Q7 11 4 12" stroke="#4A6741" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+      <path d="M10 10 Q13 7 16 8" stroke="#4A6741" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+      <path d="M10 6 Q8 3 6 4" stroke="#4A6741" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+      <path d="M10 16 Q13 13 15 14" stroke="#4A6741" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+      <path d="M10 12 Q8 9 5 9" stroke="#4A6741" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+// ---- Bottom Navigation Icons ----
+
+function HomeIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V10.5Z"
+        fill={active ? "#4A6741" : "none"}
+        stroke={active ? "#4A6741" : "#9A9A9A"}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SearchNavIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle
+        cx="11"
+        cy="11"
+        r="7"
+        fill={active ? "#4A6741" : "none"}
+        stroke={active ? "#4A6741" : "#9A9A9A"}
+        strokeWidth="1.8"
+      />
+      <path d="M16.5 16.5L21 21" stroke={active ? "#4A6741" : "#9A9A9A"} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function HeartIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 14 21 12 21Z"
+        fill={active ? "#4A6741" : "none"}
+        stroke={active ? "#4A6741" : "#9A9A9A"}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CartIcon({ active, badgeCount }: { active: boolean; badgeCount: number }) {
+  return (
+    <div className="relative">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M6 2L3 6V20C3 21.1 3.9 22 5 22H19C20.1 22 21 21.1 21 20V6L18 2H6Z"
+          fill={active ? "#4A6741" : "none"}
+          stroke={active ? "#4A6741" : "#9A9A9A"}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path d="M3 6H21" stroke={active ? "#4A6741" : "#9A9A9A"} strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M16 10C16 12.21 14.21 14 12 14C9.79 14 8 12.21 8 10" stroke={active ? "white" : "#9A9A9A"} strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      </svg>
+      {badgeCount >= 0 && (
+        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#4A6741] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+          {badgeCount}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function ProfileIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle
+        cx="12"
+        cy="8"
+        r="4"
+        fill={active ? "#4A6741" : "none"}
+        stroke={active ? "#4A6741" : "#9A9A9A"}
+        strokeWidth="1.8"
+      />
+      <path
+        d="M4 20C4 17.79 7.58 16 12 16C16.42 16 20 17.79 20 20"
+        stroke={active ? "#4A6741" : "#9A9A9A"}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// ---- Bottom Navigation Bar ----
+
+function BottomNav({ checkedCount }: { checkedCount: number }) {
+  const [activeTab, setActiveTab] = useState<"home" | "search" | "saved" | "list" | "profile">("home");
+
+  const tabs = [
+    { id: "home" as const, label: "Home", icon: (active: boolean) => <HomeIcon active={active} /> },
+    { id: "search" as const, label: "Search", icon: (active: boolean) => <SearchNavIcon active={active} /> },
+    { id: "saved" as const, label: "Saved", icon: (active: boolean) => <HeartIcon active={active} /> },
+    { id: "list" as const, label: "My List", icon: (active: boolean) => <CartIcon active={active} badgeCount={checkedCount} /> },
+    { id: "profile" as const, label: "Profile", icon: (active: boolean) => <ProfileIcon active={active} /> },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EDE8DF] z-20">
+      <div className="max-w-2xl mx-auto flex justify-around py-2">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="flex flex-col items-center gap-0.5 px-3 py-1 min-w-0"
+            >
+              {tab.icon(isActive)}
+              <span className={`text-[10px] font-medium ${isActive ? "text-[#4A6741] font-semibold" : "text-[#9A9A9A]"}`}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+// ---- Welcome Page ----
+
+function WelcomePage({ onGetStarted }: { onGetStarted: () => void }) {
+  return (
+    <div className="relative min-h-screen flex flex-col items-center justify-center px-6 bg-[#F7F3EC] overflow-hidden">
+      {/* Decorative blob + cherry blossom top-left */}
+      <BlobShape />
+      <CherryBlossomBranch />
+
+      {/* Wave pattern bottom */}
+      <WavePattern />
+
+      {/* Main content */}
+      <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-6">
+        {/* Bowl icon + title */}
+        <div className="flex flex-col items-center gap-3">
+          <BowlIcon />
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-[#2D2D2D]">NZ Recipe Helper</h1>
+            <p className="text-sm text-[#5A5A5A] mt-1">Cook with confidence in New Zealand</p>
+          </div>
+        </div>
+
+        {/* Feature cards */}
+        <div className="w-full space-y-3">
+          {/* Feature 1 */}
+          <div className="bg-white rounded-2xl p-4 flex items-start gap-3 shadow-sm border border-[#EDE8DF]">
+            <div className="shrink-0 w-10 h-10 rounded-full bg-[#E8F0E5] flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="11" cy="11" r="7" stroke="#4A6741" strokeWidth="2" />
+                <path d="M16.5 16.5L21 21" stroke="#4A6741" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#2D2D2D]">Find ingredients instantly</p>
+              <p className="text-xs text-[#5A5A5A] mt-0.5">See what you need for any recipe, in seconds.</p>
+            </div>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="bg-white rounded-2xl p-4 flex items-start gap-3 shadow-sm border border-[#EDE8DF]">
+            <div className="shrink-0 w-10 h-10 rounded-full bg-[#E8F0E5] flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 2L3 6V20C3 21.1 3.9 22 5 22H19C20.1 22 21 21.1 21 20V6L18 2H6Z" stroke="#4A6741" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <path d="M3 6H21" stroke="#4A6741" strokeWidth="2" strokeLinecap="round" />
+                <path d="M16 10C16 12.21 14.21 14 12 14C9.79 14 8 12.21 8 10" stroke="#4A6741" strokeWidth="2" strokeLinecap="round" fill="none" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#2D2D2D]">Know what to buy</p>
+              <p className="text-xs text-[#5A5A5A] mt-0.5">Clear photos and English names so you can shop with ease.</p>
+            </div>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="bg-white rounded-2xl p-4 flex items-start gap-3 shadow-sm border border-[#EDE8DF]">
+            <div className="shrink-0 w-10 h-10 rounded-full bg-[#E8F0E5] flex items-center justify-center">
+              <FernLeafIcon />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#2D2D2D]">Smart swaps &amp; best prices</p>
+              <p className="text-xs text-[#5A5A5A] mt-0.5">Get substitutes for hard-to-find items and the cheapest total across NZ supermarkets.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Button */}
+        <button
+          onClick={onGetStarted}
+          className="w-full bg-[#4A6741] hover:bg-[#3D5736] text-white rounded-full py-4 text-lg font-semibold transition-colors shadow-md"
+        >
+          Get Started
+        </button>
+
+        {/* Login link */}
+        <p className="text-sm text-[#9A9A9A]">
+          Already have an account?{" "}
+          <span className="text-[#4A6741] font-medium cursor-pointer hover:underline">Log in</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---- Existing Components ----
+
 function LanguageToggle({
   locale,
   onChange,
@@ -153,7 +480,7 @@ function LanguageToggle({
           onClick={() => onChange(l)}
           className={`px-2 py-1 rounded-md text-xs font-semibold transition-all ${
             locale === l
-              ? "bg-orange-500 text-white"
+              ? "bg-[#4A6741] text-white"
               : "bg-gray-100 text-gray-500 hover:bg-gray-200"
           }`}
         >
@@ -216,6 +543,22 @@ function StockBadge({ inStock, locale }: { inStock: boolean; locale: Locale }) {
   );
 }
 
+function StoreBadge({ store }: { store: string }) {
+  const storeKey = store as StoreKey;
+  const colorClass =
+    storeKey === "paknsave"
+      ? "bg-[#FFD100] text-gray-900"
+      : storeKey === "newworld"
+      ? "bg-[#E31837] text-white"
+      : "bg-[#007A3D] text-white";
+  const label = STORE_LABELS[storeKey] ?? store;
+  return (
+    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${colorClass}`}>
+      {label}
+    </span>
+  );
+}
+
 function IngredientCard({
   ingredient,
   checked,
@@ -267,7 +610,7 @@ function IngredientCard({
   return (
     <div
       className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-        checked ? "bg-orange-50 border-orange-300 opacity-60" : "bg-white border-gray-200 hover:border-orange-300"
+        checked ? "bg-[#F0F5EE] border-[#4A6741]/30 opacity-60" : "bg-white border-gray-200 hover:border-[#4A6741]/40"
       }`}
       onClick={onToggle}
     >
@@ -293,7 +636,7 @@ function IngredientCard({
       <div className="mt-0.5 shrink-0">
         <div
           className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-            checked ? "bg-orange-500 border-orange-500" : "border-gray-300"
+            checked ? "bg-[#4A6741] border-[#4A6741]" : "border-gray-300"
           }`}
         >
           {checked && (
@@ -313,7 +656,7 @@ function IngredientCard({
             <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">{t("recipe.optional", locale)}</span>
           )}
         </div>
-        <p className={`text-sm font-semibold text-orange-600 ${checked ? "line-through text-orange-400" : ""}`}>
+        <p className={`text-sm font-semibold text-[#4A6741] ${checked ? "line-through text-[#8BAF7E]" : ""}`}>
           {live?.name ?? ingredient.nz_product}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -324,6 +667,7 @@ function IngredientCard({
               <PriceBadge price={live.price} salePrice={live.salePrice} />
               {live.unitPrice && <span className="text-xs text-gray-400">{live.unitPrice}</span>}
               <StockBadge inStock={live.inStock} locale={locale} />
+              {live.store && <StoreBadge store={live.store} />}
             </>
           ) : (
             <span className="text-xs text-gray-400">{t("ingredient.noPrice", locale)}</span>
@@ -530,23 +874,23 @@ function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIn
                 <div
                   key={st.store}
                   className={`relative rounded-xl border-2 p-3 text-center transition-all ${
-                    isCheapest ? "border-blue-400 bg-blue-50 ring-2 ring-blue-200" : STORE_BG_COLORS[st.store]
+                    isCheapest ? "border-[#4A6741] bg-[#E8F0E5] ring-2 ring-[#4A6741]/20" : STORE_BG_COLORS[st.store]
                   }`}
                 >
                   {isCheapest && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#4A6741] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                       BEST
                     </span>
                   )}
                   <p className={`text-xs font-semibold mb-1 ${STORE_TEXT_COLORS[st.store]}`}>{st.label}</p>
-                  <p className={`text-xl font-bold ${isCheapest ? "text-blue-600" : "text-gray-800"}`}>
+                  <p className={`text-xl font-bold ${isCheapest ? "text-[#4A6741]" : "text-gray-800"}`}>
                     {st.available_count === 0 ? "---" : `$${st.total.toFixed(2)}`}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     {st.available_count}/{st.available_count + st.missing_count} {t("compare.items", locale)}
                   </p>
                   {st.missing_count > 0 && (
-                    <p className="text-xs text-orange-500 mt-0.5">{t("compare.unavailable", locale, { n: st.missing_count })}</p>
+                    <p className="text-xs text-[#C4673A] mt-0.5">{t("compare.unavailable", locale, { n: st.missing_count })}</p>
                   )}
                 </div>
               );
@@ -583,7 +927,7 @@ function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIn
                           <div
                             key={store}
                             className={`text-center py-1 px-1 rounded text-xs ${
-                              isOwned ? "text-gray-300" : isLowest ? "bg-blue-50 font-bold text-blue-600" : "text-gray-500"
+                              isOwned ? "text-gray-300" : isLowest ? "bg-[#E8F0E5] font-bold text-[#4A6741]" : "text-gray-500"
                             }`}
                           >
                             {product && product.in_stock ? `$${(product.sale_price ?? product.price).toFixed(2)}` : product ? t("compare.soldOut", locale) : "-"}
@@ -621,16 +965,16 @@ function RecipeResult({ recipe, loadingPrices, locale }: { recipe: RecipeWithPri
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="bg-gradient-to-r from-orange-500 to-orange-400 px-5 py-4">
+      <div className="bg-gradient-to-r from-[#4A6741] to-[#5A7A4F] px-5 py-4">
         <div className="flex items-center gap-3">
           <span className="text-3xl">{emoji}</span>
           <div>
             <h2 className="text-xl font-bold text-white">{recipeName(recipe.name_ja, recipe.name_en, locale, recipe.id)}</h2>
-            <p className="text-orange-100 text-sm">{locale === "ja" ? recipe.name_en : recipe.name_ja}</p>
+            <p className="text-[#c8dbbf] text-sm">{locale === "ja" ? recipe.name_en : recipe.name_ja}</p>
           </div>
         </div>
-        <p className="text-orange-50 text-sm mt-2">{recipeDescription(recipe.description, locale, recipe.id)}</p>
-        <div className="flex gap-4 mt-3 text-orange-100 text-xs">
+        <p className="text-[#d8eacf] text-sm mt-2">{recipeDescription(recipe.description, locale, recipe.id)}</p>
+        <div className="flex gap-4 mt-3 text-[#c8dbbf] text-xs">
           <span>👥 {t("recipe.servings", locale, { n: recipe.servings })}</span>
           <span>⏱️ {t("recipe.prepTime", locale, { n: recipe.prep_time })}</span>
           <span>🔥 {t("recipe.cookTime", locale, { n: recipe.cook_time })}</span>
@@ -643,7 +987,7 @@ function RecipeResult({ recipe, loadingPrices, locale }: { recipe: RecipeWithPri
             <span className="ml-2 text-sm font-normal text-gray-400">({t("recipe.checkedCount", locale, { checked: checkedCount, total: totalCount })})</span>
           </h3>
           {checkedCount > 0 && (
-            <button onClick={() => setChecked({})} className="text-xs text-gray-400 hover:text-orange-500 transition-colors">{t("recipe.reset", locale)}</button>
+            <button onClick={() => setChecked({})} className="text-xs text-gray-400 hover:text-[#4A6741] transition-colors">{t("recipe.reset", locale)}</button>
           )}
         </div>
         <div className="space-y-2">
@@ -677,7 +1021,7 @@ function RecipeResult({ recipe, loadingPrices, locale }: { recipe: RecipeWithPri
             <ol className="space-y-3">
               {recipe.steps.map((step, idx) => (
                 <li key={idx} className="flex gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-orange-100 text-orange-600 text-xs font-bold flex items-center justify-center mt-0.5">{idx + 1}</span>
+                  <span className="shrink-0 w-6 h-6 rounded-full bg-[#E8F0E5] text-[#4A6741] text-xs font-bold flex items-center justify-center mt-0.5">{idx + 1}</span>
                   <p className="text-sm text-gray-700 leading-relaxed">{step}</p>
                 </li>
               ))}
@@ -776,7 +1120,7 @@ function NearbyStoresPanel({ locale }: { locale: Locale }) {
   );
 }
 
-function AIChatPanel({ locale }: { locale: Locale }) {
+function AIChatPanel({ locale, showWelcome }: { locale: Locale; showWelcome: boolean }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -817,11 +1161,14 @@ function AIChatPanel({ locale }: { locale: Locale }) {
     }
   };
 
+  // Hide chat button on welcome page
+  if (showWelcome) return null;
+
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-all z-50"
+        className="fixed bottom-20 right-6 w-14 h-14 bg-[#4A6741] hover:bg-[#3D5736] text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-all z-50"
       >
         🤖
       </button>
@@ -829,13 +1176,13 @@ function AIChatPanel({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 overflow-hidden" style={{ height: "28rem" }}>
-      <div className="bg-orange-500 px-4 py-3 flex items-center justify-between shrink-0">
+    <div className="fixed bottom-20 right-6 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 overflow-hidden" style={{ height: "28rem" }}>
+      <div className="bg-gradient-to-r from-[#4A6741] to-[#5A7A4F] px-4 py-3 flex items-center justify-between shrink-0">
         <div>
           <p className="text-white font-bold text-sm">🤖 {t("chat.title", locale)}</p>
-          <p className="text-orange-100 text-xs">{t("chat.subtitle", locale)}</p>
+          <p className="text-[#c8dbbf] text-xs">{t("chat.subtitle", locale)}</p>
         </div>
-        <button onClick={() => setOpen(false)} className="text-white text-xl hover:text-orange-200">✕</button>
+        <button onClick={() => setOpen(false)} className="text-white text-xl hover:text-[#c8dbbf]">✕</button>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
@@ -846,7 +1193,7 @@ function AIChatPanel({ locale }: { locale: Locale }) {
               <button
                 key={q}
                 onClick={() => { setInput(q); }}
-                className="block w-full text-left text-xs text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mb-1.5 hover:bg-orange-100 transition-colors"
+                className="block w-full text-left text-xs text-[#4A6741] bg-[#E8F0E5] rounded-lg px-3 py-2 mb-1.5 hover:bg-[#d8eacf] transition-colors"
               >
                 {q}
               </button>
@@ -857,7 +1204,7 @@ function AIChatPanel({ locale }: { locale: Locale }) {
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
               className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                msg.role === "user" ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-800"
+                msg.role === "user" ? "bg-[#4A6741] text-white" : "bg-gray-100 text-gray-800"
               }`}
             >
               {msg.content}
@@ -881,12 +1228,12 @@ function AIChatPanel({ locale }: { locale: Locale }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t("chat.placeholder", locale)}
-            className="flex-1 text-sm px-3 py-2 rounded-xl border border-gray-200 focus:border-orange-300 focus:outline-none"
+            className="flex-1 text-sm px-3 py-2 rounded-xl border border-gray-200 focus:border-[#4A6741]/40 focus:outline-none"
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm px-3 py-2 rounded-xl transition-colors"
+            className="bg-[#4A6741] hover:bg-[#3D5736] disabled:bg-[#8BAF7E] text-white text-sm px-3 py-2 rounded-xl transition-colors"
           >
             {t("chat.send", locale)}
           </button>
@@ -989,6 +1336,7 @@ function AIInsightsPanel({
 }
 
 export default function HomePage() {
+  const [showWelcome, setShowWelcome] = useState<boolean>(true);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<RecipeSuggestion[]>([]);
   const [searchResult, setSearchResult] = useState<SearchResponse | null>(null);
@@ -996,6 +1344,7 @@ export default function HomePage() {
   const [searched, setSearched] = useState(false);
   const [selectedStore, setSelectedStore] = useState<StoreKey>("woolworths");
   const [locale, setLocale] = useState<Locale>("en");
+  const [checkedIngredientCount, setCheckedIngredientCount] = useState(0);
 
   useEffect(() => {
     fetch("/api/recipes/suggestions")
@@ -1041,9 +1390,20 @@ export default function HomePage() {
   };
   const clearSearch = () => { setQuery(""); setSearchResult(null); setSearched(false); };
 
+  // Count total checked ingredients across all displayed recipes
+  useEffect(() => {
+    // We track this at the page level by reading from search results
+    // For now, use 0 as default — actual count is managed inside RecipeResult
+    setCheckedIngredientCount(0);
+  }, [searchResult]);
+
+  if (showWelcome) {
+    return <WelcomePage onGetStarted={() => setShowWelcome(false)} />;
+  }
+
   return (
-    <div className="min-h-screen bg-orange-50">
-      <header className="bg-white border-b border-orange-100 sticky top-0 z-10 shadow-sm">
+    <div className="min-h-screen bg-[#F7F3EC]">
+      <header className="bg-white border-b border-[#EDE8DF] sticky top-0 z-10 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
           <span className="text-2xl">🍱</span>
           <div className="flex-1">
@@ -1054,7 +1414,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
         {!searched && (
           <div className="text-center mb-6">
             <p className="text-gray-600 text-base leading-relaxed">
@@ -1069,13 +1429,13 @@ export default function HomePage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("search.placeholder", locale)}
-            className="w-full pl-12 pr-24 py-3.5 rounded-2xl border-2 border-orange-200 focus:border-orange-400 focus:outline-none bg-white text-gray-800 placeholder-gray-400 text-base shadow-sm"
+            className="w-full pl-12 pr-24 py-3.5 rounded-full border-2 border-[#4A6741]/20 focus:border-[#4A6741] focus:outline-none bg-white text-gray-800 placeholder-gray-400 text-base shadow-sm"
           />
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400 text-xl">🔍</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4A6741] text-xl">🔍</span>
           <button
             type="submit"
             disabled={!query.trim() || loading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#4A6741] hover:bg-[#3D5736] disabled:bg-[#8BAF7E] text-white text-sm font-medium px-4 py-2 rounded-full transition-colors"
           >
             {loading ? t("search.loading", locale) : t("search.button", locale)}
           </button>
@@ -1102,7 +1462,7 @@ export default function HomePage() {
                 <button
                   key={s.id}
                   onClick={() => handleSuggestionClick(s.name_ja)}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium bg-white border-2 border-orange-200 text-orange-600 hover:bg-orange-500 hover:border-orange-500 hover:text-white transition-all shadow-sm"
+                  className="px-3 py-1.5 rounded-full text-sm font-medium bg-white border-2 border-[#4A6741]/20 text-[#4A6741] hover:bg-[#4A6741] hover:border-[#4A6741] hover:text-white transition-all shadow-sm"
                 >
                   {recipeName(s.name_ja, s.name_en, locale, s.id)}
                 </button>
@@ -1142,7 +1502,7 @@ export default function HomePage() {
               </div>
             ))}
             <div className="text-center mt-4">
-              <button onClick={clearSearch} className="text-sm text-gray-400 hover:text-orange-500 transition-colors">
+              <button onClick={clearSearch} className="text-sm text-gray-400 hover:text-[#4A6741] transition-colors">
                 {t("search.back", locale)}
               </button>
             </div>
@@ -1150,11 +1510,12 @@ export default function HomePage() {
         )}
       </main>
 
-      <footer className="text-center py-6 text-xs text-gray-400">
+      <footer className="text-center py-6 pb-24 text-xs text-gray-400">
         {t("footer.text", locale)}
       </footer>
 
-      <AIChatPanel locale={locale} />
+      <BottomNav checkedCount={checkedIngredientCount} />
+      <AIChatPanel locale={locale} showWelcome={showWelcome} />
     </div>
   );
 }
