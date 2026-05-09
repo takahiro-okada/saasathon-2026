@@ -295,6 +295,48 @@ const translations = {
     zh: "连接出错，请重试。",
   },
 
+  // AI Insights
+  "insights.title": {
+    en: "AI Shopping Insights",
+    ja: "AIショッピングインサイト",
+    zh: "AI购物洞察",
+  },
+  "insights.subtitle": {
+    en: "Personalized tips based on your activity",
+    ja: "あなたの使い方に基づくパーソナルなヒント",
+    zh: "基于您的使用习惯的个性化建议",
+  },
+  "insights.loading": {
+    en: "Analyzing your shopping patterns...",
+    ja: "お買い物パターンを分析中...",
+    zh: "正在分析您的购物模式...",
+  },
+  "insights.error": {
+    en: "Could not load insights",
+    ja: "インサイトの読み込みに失敗",
+    zh: "无法加载洞察",
+  },
+  "insights.costSaving": {
+    en: "Cost Saving",
+    ja: "節約ヒント",
+    zh: "省钱建议",
+  },
+  "insights.pattern": {
+    en: "Cooking Pattern",
+    ja: "料理パターン",
+    zh: "烹饪模式",
+  },
+  "insights.inventory": {
+    en: "Smart Inventory",
+    ja: "在庫活用",
+    zh: "智能库存",
+  },
+  "insights.tryRecipe": {
+    en: "Try this recipe →",
+    ja: "このレシピを試す →",
+    zh: "试试这个食谱 →",
+  },
+
   // Footer
   "footer.text": {
     en: "NZ Recipe Helper — Pak'nSave / New World / Woolworths",

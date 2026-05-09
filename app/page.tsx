@@ -7,6 +7,41 @@ import { t, LOCALE_LABELS, recipeName, recipeDescription, ingredientName, quanti
 
 type StoreKey = "woolworths" | "paknsave" | "newworld";
 
+function getUserId(): string {
+  if (typeof window === "undefined") return "anonymous";
+  let id = localStorage.getItem("nzrh_user_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("nzrh_user_id", id);
+  }
+  return id;
+}
+
+function logActivity(data: {
+  action_type: string;
+  recipe_id?: string;
+  store?: string;
+  owned_ingredients?: string[];
+  cheapest_store?: string;
+  total_price?: number;
+}) {
+  fetch("/api/activity", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: getUserId(), ...data }),
+  }).catch(() => {});
+}
+
+interface AIInsight {
+  type: "cost_saving" | "pattern" | "inventory";
+  title: string;
+  description: string;
+  savings?: string;
+  extra_cost?: string;
+  store?: string;
+  recipe_id?: string;
+}
+
 interface RecipeSuggestion {
   id: string;
   name_ja: string;
@@ -276,6 +311,15 @@ function PriceComparePanel({ recipeId, recipeName, locale }: { recipeId: string;
       const json: CompareResponse = await res.json();
       setData(json);
       setOpen(true);
+      if (json.cheapest) {
+        const bestTotal = json.store_totals.find((s) => s.store === json.cheapest);
+        logActivity({
+          action_type: "compare",
+          recipe_id: recipeId,
+          cheapest_store: json.cheapest,
+          total_price: bestTotal?.total,
+        });
+      }
     } catch {
       setError(t("compare.error", locale));
     } finally {
@@ -288,6 +332,11 @@ function PriceComparePanel({ recipeId, recipeName, locale }: { recipeId: string;
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      logActivity({
+        action_type: "ingredient_check",
+        recipe_id: recipeId,
+        owned_ingredients: [...next],
+      });
       return next;
     });
   };
@@ -759,6 +808,98 @@ function AIChatPanel({ locale }: { locale: Locale }) {
   );
 }
 
+function AIInsightsPanel({
+  locale,
+  onRecipeClick,
+}: {
+  locale: Locale;
+  onRecipeClick: (recipeId: string) => void;
+}) {
+  const [insights, setInsights] = useState<AIInsight[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (loaded) return;
+    const userId = getUserId();
+    setLoading(true);
+    fetch(`/api/recommendations?user_id=${encodeURIComponent(userId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.insights?.length) setInsights(data.insights);
+      })
+      .catch(() => {})
+      .finally(() => {
+        setLoading(false);
+        setLoaded(true);
+      });
+  }, [loaded]);
+
+  if (loading) {
+    return (
+      <div className="mb-5 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 p-4 text-center">
+        <span className="animate-spin inline-block w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full mr-2" />
+        <span className="text-sm text-indigo-600">{t("insights.loading", locale)}</span>
+      </div>
+    );
+  }
+
+  if (!insights.length) return null;
+
+  const typeConfig: Record<string, { icon: string; color: string; bg: string; border: string; labelKey: "insights.costSaving" | "insights.pattern" | "insights.inventory" }> = {
+    cost_saving: { icon: "💰", color: "text-green-700", bg: "bg-green-50", border: "border-green-200", labelKey: "insights.costSaving" },
+    pattern: { icon: "📊", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200", labelKey: "insights.pattern" },
+    inventory: { icon: "🏠", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-200", labelKey: "insights.inventory" },
+  };
+
+  return (
+    <div className="mb-5">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-lg">🧠</span>
+        <div>
+          <h2 className="text-sm font-bold text-gray-800">{t("insights.title", locale)}</h2>
+          <p className="text-xs text-gray-400">{t("insights.subtitle", locale)}</p>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {insights.map((insight, i) => {
+          const cfg = typeConfig[insight.type] ?? typeConfig.pattern;
+          return (
+            <div key={i} className={`rounded-xl border p-3 ${cfg.bg} ${cfg.border}`}>
+              <div className="flex items-start gap-2">
+                <span className="text-lg shrink-0">{cfg.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
+                      {t(cfg.labelKey, locale)}
+                    </span>
+                    {insight.savings && (
+                      <span className="text-xs font-bold text-green-600">Save {insight.savings}</span>
+                    )}
+                    {insight.extra_cost && (
+                      <span className="text-xs font-bold text-purple-600">+{insight.extra_cost}</span>
+                    )}
+                  </div>
+                  <p className={`text-sm font-semibold ${cfg.color}`}>{insight.title}</p>
+                  <p className="text-xs text-gray-600 mt-0.5">{insight.description}</p>
+                  {insight.recipe_id && (
+                    <button
+                      onClick={() => onRecipeClick(insight.recipe_id!)}
+                      className={`mt-1.5 text-xs font-semibold ${cfg.color} hover:underline`}
+                    >
+                      {t("insights.tryRecipe", locale)}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<RecipeSuggestion[]>([]);
@@ -783,6 +924,9 @@ export default function HomePage() {
         const res = await fetch(`/api/recipes/search?q=${encodeURIComponent(q)}&store=${store}`);
         const data: SearchResponse = await res.json();
         setSearchResult(data);
+        if (data.results?.length) {
+          logActivity({ action_type: "search", recipe_id: data.results[0].id, store });
+        }
       } finally {
         setLoading(false);
       }
@@ -794,7 +938,18 @@ export default function HomePage() {
   const handleSuggestionClick = (name: string) => { setQuery(name); doSearch(name); };
   const handleStoreChange = (store: StoreKey) => {
     setSelectedStore(store);
+    logActivity({ action_type: "store_select", store });
     if (searched && query.trim()) doSearch(query, store);
+  };
+  const handleInsightRecipeClick = (recipeId: string) => {
+    const nameMap: Record<string, string> = {
+      "curry-rice": "カレーライス", "ramen": "ラーメン", "karaage": "唐揚げ",
+      "teriyaki-chicken": "照り焼きチキン", "okonomiyaki": "お好み焼き",
+      "miso-soup": "味噌汁", "nikujaga": "肉じゃが", "oyakodon": "親子丼",
+    };
+    const q = nameMap[recipeId] ?? recipeId;
+    setQuery(q);
+    doSearch(q);
   };
   const clearSearch = () => { setQuery(""); setSearchResult(null); setSearched(false); };
 
@@ -844,6 +999,10 @@ export default function HomePage() {
         <div className="mb-5">
           <NearbyStoresPanel locale={locale} />
         </div>
+
+        {!searched && (
+          <AIInsightsPanel locale={locale} onRecipeClick={handleInsightRecipeClick} />
+        )}
 
         {suggestions.length > 0 && (
           <div className="mb-6">
