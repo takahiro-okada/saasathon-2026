@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { IngredientWithPricing, StoreKey, CompareResponse } from "@/types";
 import type { Locale } from "@/app/lib/i18n";
 import { t, ingredientName, quantity as tq } from "@/app/lib/i18n";
-import { STORE_LABELS, STORE_BG_COLORS, STORE_TEXT_COLORS } from "@/constants/stores";
+import { STORE_LABELS, STORE_BG_COLORS, STORE_TEXT_COLORS, STORE_MAP_QUERIES } from "@/constants/stores";
 import { logActivity } from "@/lib/activity";
 
 export function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIngredients }: { recipeId: string; recipeName: string; locale: Locale; ingredients: IngredientWithPricing[] }) {
@@ -165,10 +165,14 @@ export function PriceComparePanel({ recipeId, recipeName, locale, ingredients: r
               const st = adjustedTotals.find((t) => t.store === store);
               if (!st) return null;
               const isCheapest = st.store === cheapest;
+              const mapUrl = `https://www.google.com/maps/search/${STORE_MAP_QUERIES[store]}+near+me`;
               return (
-                <div
+                <a
                   key={st.store}
-                  className={`relative rounded-xl border-2 p-3 text-center transition-all ${
+                  href={mapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`relative rounded-xl border-2 p-3 text-center transition-all cursor-pointer hover:shadow-md block ${
                     isCheapest ? "border-[#4A6741] bg-[#E8F0E5] ring-2 ring-[#4A6741]/20" : STORE_BG_COLORS[st.store]
                   }`}
                 >
@@ -187,7 +191,8 @@ export function PriceComparePanel({ recipeId, recipeName, locale, ingredients: r
                   {st.missing_count > 0 && (
                     <p className="text-xs text-[#C4673A] mt-0.5">{t("compare.unavailable", locale, { n: st.missing_count })}</p>
                   )}
-                </div>
+                  <p className="text-xs text-blue-500 mt-1">📍 Find nearby</p>
+                </a>
               );
             })}
           </div>

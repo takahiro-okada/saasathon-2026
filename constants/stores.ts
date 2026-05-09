@@ -41,3 +41,9 @@ export const STORE_BADGE_LOGOS: Record<StoreKey, string> = {
   paknsave: "/logos/paknsave-badge.svg",
   newworld: "/logos/newworld-badge.svg",
 };
+
+export const STORE_MAP_QUERIES: Record<StoreKey, string> = {
+  woolworths: "Woolworths",
+  paknsave: "Pak'n+Save",
+  newworld: "New+World",
+};
