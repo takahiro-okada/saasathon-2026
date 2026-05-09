@@ -26,6 +26,7 @@ export interface RecipeSuggestion {
   id: string;
   name_ja: string;
   name_en: string;
+  name_zh?: string;
 }
 
 export interface SearchResponse {
