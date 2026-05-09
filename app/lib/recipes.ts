@@ -19,8 +19,15 @@ export interface LiveProduct {
   unitPrice?: string;
 }
 
+export interface AlternativeProduct {
+  name: string;
+  search_query: string;
+  liveProduct?: LiveProduct;
+}
+
 export type IngredientWithPricing = Ingredient & {
   liveProduct?: LiveProduct;
+  alternatives?: AlternativeProduct[];
 };
 
 export interface Recipe {

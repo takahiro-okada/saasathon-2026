@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import type { RecipeWithPricing, IngredientWithPricing } from "@/app/lib/recipes";
+import type { RecipeWithPricing, IngredientWithPricing, AlternativeProduct } from "@/app/lib/recipes";
 import { t, LOCALE_LABELS, recipeName, recipeDescription, ingredientName, getSubstitution, quantity as tq, type Locale } from "@/app/lib/i18n";
 
 type StoreKey = "woolworths" | "paknsave" | "newworld";
@@ -895,6 +895,40 @@ function IngredientCard({
           <p className="text-xs mt-1 px-2 py-1 rounded-lg bg-amber-100 text-amber-700 border border-amber-200">
             🤖 {aiSub}
           </p>
+        )}
+        {!live && ingredient.alternatives && ingredient.alternatives.length > 0 && (
+          <div className="mt-2 ml-2 border-l-2 border-emerald-300 pl-3 space-y-1.5">
+            <p className="text-xs font-semibold text-emerald-700">
+              ↳ Alternative
+            </p>
+            {ingredient.alternatives.map((alt, i) => (
+              <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-emerald-50 border border-emerald-200">
+                {alt.liveProduct?.imageUrl ? (
+                  <Image
+                    src={alt.liveProduct.imageUrl}
+                    alt={alt.liveProduct.name ?? alt.name}
+                    width={40}
+                    height={40}
+                    className="object-contain rounded shrink-0"
+                    unoptimized
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  />
+                ) : (
+                  <span className="text-lg shrink-0">🔄</span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-emerald-800">{alt.liveProduct?.name ?? alt.name}</p>
+                  {alt.liveProduct && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                      <PriceBadge price={alt.liveProduct.price} salePrice={alt.liveProduct.salePrice} />
+                      {alt.liveProduct.unitPrice && <span className="text-xs text-gray-400">{alt.liveProduct.unitPrice}</span>}
+                      <StockBadge inStock={alt.liveProduct.inStock} locale={locale} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

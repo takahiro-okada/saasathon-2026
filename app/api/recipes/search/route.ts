@@ -321,6 +321,7 @@ export async function GET(request: NextRequest) {
           aisle: ing.aisle,
           optional: ing.optional,
           liveProduct,
+          alternatives: [] as { name: string; search_query: string; liveProduct: typeof liveProduct }[],
         };
       })
     );
@@ -368,16 +369,15 @@ export async function GET(request: NextRequest) {
       const searchQuery = matched?.search_query ?? aiIng.search_query;
       const ingredientId = matched?.id;
 
-      let liveProduct = await lookupIngredientPrice(searchQuery, ingredientId);
-      let usedName = aiIng.name_en;
+      const liveProduct = await lookupIngredientPrice(searchQuery, ingredientId);
 
+      let altResults: { name: string; search_query: string; liveProduct: typeof liveProduct }[] = [];
       if (!liveProduct) {
-        const alternatives = await suggestAlternatives(aiIng.name_en);
-        for (const alt of alternatives) {
+        const altTerms = await suggestAlternatives(aiIng.name_en);
+        for (const alt of altTerms) {
           const altProduct = await lookupIngredientPrice(alt);
           if (altProduct) {
-            liveProduct = altProduct;
-            usedName = `${aiIng.name_en} → ${liveProduct.name}`;
+            altResults.push({ name: alt, search_query: alt, liveProduct: altProduct });
             break;
           }
         }
@@ -387,11 +387,12 @@ export async function GET(request: NextRequest) {
         ingredient_id: ingredientId ?? undefined,
         name_ja: aiIng.name_ja,
         name_en: aiIng.name_en,
-        nz_product: usedName,
+        nz_product: aiIng.name_en,
         quantity: aiIng.quantity,
         aisle: matched?.aisle ?? aiIng.aisle,
         optional: aiIng.optional,
         liveProduct,
+        alternatives: altResults,
       };
     })
   );
