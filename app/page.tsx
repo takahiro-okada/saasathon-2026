@@ -1152,8 +1152,23 @@ function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIn
               <p className="text-xs font-semibold text-gray-600">{t("compare.perItemTitle", locale)}</p>
             </div>
             <div className="divide-y divide-gray-100">
+              {/* Store header row matching total card order */}
+              <div className="px-4 py-2 grid grid-cols-[1fr_repeat(3,60px)] gap-1 items-center">
+                <span />
+                {adjustedTotals.map((st) => (
+                  <span key={st.store} className={`text-center text-xs font-semibold ${STORE_TEXT_COLORS[st.store]}`}>
+                    {st.label}
+                  </span>
+                ))}
+              </div>
               {requiredIngredients.map((ing) => {
                 const isOwned = owned.has(ing.ingredient_id);
+                const storeOrder = adjustedTotals.map((st) => st.store);
+                const prices = storeOrder.map((s) => {
+                  const p = ing.stores[s];
+                  return p && p.in_stock ? (p.sale_price ?? p.price) : Infinity;
+                });
+                const minPrice = Math.min(...prices);
                 return (
                   <div key={ing.ingredient_id} className={`px-4 py-2 ${isOwned ? "opacity-40" : ""}`}>
                     <div className="flex items-center justify-between mb-1">
@@ -1162,14 +1177,10 @@ function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIn
                       </span>
                       <span className="text-xs text-gray-400">{tq(ing.quantity, locale)}</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-1">
-                      {(["woolworths", "paknsave", "newworld"] as StoreKey[]).map((store) => {
+                    <div className="grid grid-cols-[1fr_repeat(3,60px)] gap-1">
+                      <span />
+                      {storeOrder.map((store) => {
                         const product = ing.stores[store];
-                        const prices = (["woolworths", "paknsave", "newworld"] as StoreKey[]).map((s) => {
-                          const p = ing.stores[s];
-                          return p && p.in_stock ? (p.sale_price ?? p.price) : Infinity;
-                        });
-                        const minPrice = Math.min(...prices);
                         const effectivePrice = product?.in_stock ? (product.sale_price ?? product.price) : null;
                         const isLowest = effectivePrice !== null && effectivePrice === minPrice && minPrice < Infinity;
                         return (
@@ -1179,7 +1190,7 @@ function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIn
                               isOwned ? "text-gray-300" : isLowest ? "bg-[#E8F0E5] font-bold text-[#4A6741]" : "text-gray-500"
                             }`}
                           >
-                            {product && product.in_stock ? `$${(product.sale_price ?? product.price).toFixed(2)}` : product ? t("compare.soldOut", locale) : "-"}
+                            {product && product.in_stock ? `$${effectivePrice!.toFixed(2)}` : product ? t("compare.soldOut", locale) : "-"}
                           </div>
                         );
                       })}
