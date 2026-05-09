@@ -64,10 +64,6 @@ export function WelcomePage({ onGetStarted }: { onGetStarted: () => void }) {
           Get Started
         </button>
 
-        <p className="text-sm text-[#9A9A9A]">
-          Already have an account?{" "}
-          <span className="text-[#4A6741] font-medium cursor-pointer hover:underline">Log in</span>
-        </p>
       </div>
     </div>
   );
