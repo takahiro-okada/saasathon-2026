@@ -24,7 +24,6 @@ jobs:
         with:
           node-version: "20"
 
-      # パスを直接指定してキャッシュを設定
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -44,3 +43,6 @@ jobs:
 
       - name: Build
         run: pnpm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
