@@ -369,7 +369,7 @@ function BottomNav({ checkedCount }: { checkedCount: number }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EDE8DF] z-20">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EDE8DF] z-20" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       <div className="max-w-2xl mx-auto flex justify-around py-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
