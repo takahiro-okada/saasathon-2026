@@ -138,6 +138,18 @@ const STORE_TEXT_COLORS: Record<StoreKey, string> = {
   newworld: "text-red-700",
 };
 
+const STORE_LOGOS: Record<StoreKey, string> = {
+  woolworths: "/logos/woolworths.svg",
+  paknsave: "/logos/paknsave.svg",
+  newworld: "/logos/newworld.svg",
+};
+
+const STORE_BADGE_LOGOS: Record<StoreKey, string> = {
+  woolworths: "/logos/woolworths-badge.svg",
+  paknsave: "/logos/paknsave-badge.svg",
+  newworld: "/logos/newworld-badge.svg",
+};
+
 // ---- Decorative SVG Components ----
 
 function BlobShape() {
@@ -693,11 +705,18 @@ function StoreTabs({
         <button
           key={store}
           onClick={() => onChange(store)}
-          className={`flex-1 py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+          className={`flex-1 py-2 px-3 rounded-xl border-2 transition-all flex items-center justify-center ${
             selected === store ? STORE_COLORS[store] : STORE_INACTIVE[store]
           }`}
         >
-          {STORE_LABELS[store]}
+          <Image
+            src={STORE_LOGOS[store]}
+            alt={STORE_LABELS[store]}
+            width={100}
+            height={24}
+            className={`h-6 w-auto ${selected !== store ? "opacity-70" : ""}`}
+            unoptimized
+          />
         </button>
       ))}
     </div>
@@ -734,17 +753,24 @@ function StockBadge({ inStock, locale }: { inStock: boolean; locale: Locale }) {
 
 function StoreBadge({ store }: { store: string }) {
   const storeKey = store as StoreKey;
-  const colorClass =
-    storeKey === "paknsave"
-      ? "bg-[#FFD100] text-gray-900"
-      : storeKey === "newworld"
-      ? "bg-[#E31837] text-white"
-      : "bg-[#007A3D] text-white";
+  const logo = STORE_BADGE_LOGOS[storeKey];
   const label = STORE_LABELS[storeKey] ?? store;
+  if (!logo) {
+    return (
+      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-gray-200 text-gray-700">
+        {label}
+      </span>
+    );
+  }
   return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${colorClass}`}>
-      {label}
-    </span>
+    <Image
+      src={logo}
+      alt={label}
+      width={72}
+      height={16}
+      className="h-4 w-auto inline-block"
+      unoptimized
+    />
   );
 }
 
