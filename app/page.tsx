@@ -128,10 +128,7 @@ export default function HomePage() {
       >
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
           <span className="text-2xl">🍱</span>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">{t("header.title", locale)}</h1>
-            <p className="text-xs text-gray-500">{t("header.subtitle", locale)}</p>
-          </div>
+          <h1 className="flex-1 text-lg font-bold text-gray-900 leading-tight">{t("header.title", locale)}</h1>
           <LanguageToggle locale={locale} onChange={setLocale} />
         </div>
       </header>

@@ -13,11 +13,6 @@ const translations = {
     ja: "ShopMate",
     zh: "ShopMate",
   },
-  "header.subtitle": {
-    en: "Find Japanese cooking ingredients at NZ supermarkets",
-    ja: "NZスーパーで日本料理の材料を見つけよう",
-    zh: "在NZ超市找到日本料理食材",
-  },
 
   // Hero
   "hero.description": {

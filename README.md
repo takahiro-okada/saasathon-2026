@@ -1,6 +1,6 @@
 # ShopMate
 
-Cook Japanese food with confidence in New Zealand. Search any dish, find ingredients at local supermarkets, compare prices across stores, and get smart substitutions for hard-to-find items.
+Cook any cuisine with confidence in New Zealand. Search recipes from around the world, find ingredients at local supermarkets, compare prices across stores, and get smart substitutions for hard-to-find items.
 
 **Live**: https://saasathon-2026.vercel.app
 
