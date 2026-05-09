@@ -25,10 +25,4 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     description: "See which supermarkets are closest to you and compare distances.",
     position: "below",
   },
-  {
-    target: "step-5",
-    title: "Navigate the app",
-    description: "Use the bottom bar to switch between Home, Search, your Saved recipes, Shopping List, and Profile.",
-    position: "above",
-  },
 ];
