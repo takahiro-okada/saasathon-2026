@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import type { RecipeWithPricing, IngredientWithPricing } from "@/app/lib/recipes";
+import { t, LOCALE_LABELS, recipeName, recipeDescription, ingredientName, quantity as tq, type Locale } from "@/app/lib/i18n";
 
 type StoreKey = "woolworths" | "paknsave" | "newworld";
 
@@ -95,6 +96,32 @@ const STORE_TEXT_COLORS: Record<StoreKey, string> = {
   newworld: "text-red-700",
 };
 
+function LanguageToggle({
+  locale,
+  onChange,
+}: {
+  locale: Locale;
+  onChange: (l: Locale) => void;
+}) {
+  return (
+    <div className="flex gap-1">
+      {(["en", "ja", "zh"] as Locale[]).map((l) => (
+        <button
+          key={l}
+          onClick={() => onChange(l)}
+          className={`px-2 py-1 rounded-md text-xs font-semibold transition-all ${
+            locale === l
+              ? "bg-orange-500 text-white"
+              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+          }`}
+        >
+          {LOCALE_LABELS[l]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function StoreTabs({
   selected,
   onChange,
@@ -133,16 +160,16 @@ function PriceBadge({ price, salePrice }: { price: number; salePrice?: number })
   return <span className="text-green-600 font-bold text-sm">${price.toFixed(2)}</span>;
 }
 
-function StockBadge({ inStock }: { inStock: boolean }) {
+function StockBadge({ inStock, locale }: { inStock: boolean; locale: Locale }) {
   return inStock ? (
     <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 font-medium border border-green-200">
       <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-      In Stock
+      {t("ingredient.inStock", locale)}
     </span>
   ) : (
     <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 font-medium border border-red-200">
       <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-      Out of Stock
+      {t("ingredient.outOfStock", locale)}
     </span>
   );
 }
@@ -152,11 +179,13 @@ function IngredientCard({
   checked,
   onToggle,
   loadingPrices,
+  locale,
 }: {
   ingredient: IngredientWithPricing;
   checked: boolean;
   onToggle: () => void;
   loadingPrices: boolean;
+  locale: Locale;
 }) {
   const live = ingredient.liveProduct;
   return (
@@ -201,11 +230,11 @@ function IngredientCard({
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <span className={`font-medium text-gray-900 ${checked ? "line-through text-gray-400" : ""}`}>
-            {ingredient.name_ja}
+            {ingredientName(ingredient.name_ja, ingredient.name_en, locale)}
           </span>
-          <span className="text-sm text-gray-500">({ingredient.quantity})</span>
+          <span className="text-sm text-gray-500">({tq(ingredient.quantity, locale)})</span>
           {ingredient.optional && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Optional</span>
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">{t("recipe.optional", locale)}</span>
           )}
         </div>
         <p className={`text-sm font-semibold text-orange-600 ${checked ? "line-through text-orange-400" : ""}`}>
@@ -213,15 +242,15 @@ function IngredientCard({
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {loadingPrices ? (
-            <span className="text-xs text-gray-400 animate-pulse">価格を読み込み中...</span>
+            <span className="text-xs text-gray-400 animate-pulse">{t("ingredient.loadingPrice", locale)}</span>
           ) : live ? (
             <>
               <PriceBadge price={live.price} salePrice={live.salePrice} />
               {live.unitPrice && <span className="text-xs text-gray-400">{live.unitPrice}</span>}
-              <StockBadge inStock={live.inStock} />
+              <StockBadge inStock={live.inStock} locale={locale} />
             </>
           ) : (
-            <span className="text-xs text-gray-400">価格情報なし</span>
+            <span className="text-xs text-gray-400">{t("ingredient.noPrice", locale)}</span>
           )}
         </div>
         <p className="text-xs text-gray-400 mt-0.5">💡 {ingredient.aisle}</p>
@@ -230,7 +259,7 @@ function IngredientCard({
   );
 }
 
-function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeName: string }) {
+function PriceComparePanel({ recipeId, recipeName, locale }: { recipeId: string; recipeName: string; locale: Locale }) {
   const [data, setData] = useState<CompareResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -248,7 +277,7 @@ function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeN
       setData(json);
       setOpen(true);
     } catch {
-      setError("価格比較の取得に失敗しました。もう一度お試しください。");
+      setError(t("compare.error", locale));
     } finally {
       setLoading(false);
     }
@@ -307,14 +336,14 @@ function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeN
         {loading ? (
           <>
             <span className="animate-spin inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full" />
-            3店舗の価格を取得中...
+            {t("compare.loading", locale)}
           </>
         ) : open ? (
-          "▲ 価格比較を閉じる"
+          `▲ ${t("compare.close", locale)}`
         ) : data ? (
-          "▼ 価格比較を開く"
+          `▼ ${t("compare.open", locale)}`
         ) : (
-          <>💰 {recipeName}の最安スーパーを比較</>
+          <>💰 {t("compare.button", locale, { recipe: recipeName })}</>
         )}
       </button>
 
@@ -325,15 +354,15 @@ function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeN
           {/* 持ってる食材チェック */}
           <div className="bg-purple-50 rounded-xl border border-purple-200 p-3">
             <p className="text-xs font-semibold text-purple-700 mb-2">
-              🏠 持っている食材をチェック（合計から除外）
+              🏠 {t("compare.ownedTitle", locale)}
               {ownedCount > 0 && (
                 <span className="ml-2 text-purple-500 font-normal">
-                  {ownedCount}品除外中
+                  {t("compare.excludingCount", locale, { n: ownedCount })}
                   <button
                     onClick={() => setOwned(new Set())}
                     className="ml-2 underline hover:text-purple-700"
                   >
-                    リセット
+                    {t("compare.resetOwned", locale)}
                   </button>
                 </span>
               )}
@@ -350,7 +379,7 @@ function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeN
                   }`}
                 >
                   {owned.has(ing.ingredient_id) ? "✓ " : ""}
-                  {ing.name_ja}
+                  {ingredientName(ing.name_ja, ing.name_en, locale)}
                 </button>
               ))}
             </div>
@@ -377,10 +406,10 @@ function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeN
                     {st.available_count === 0 ? "---" : `$${st.total.toFixed(2)}`}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {st.available_count}/{st.available_count + st.missing_count} 品
+                    {st.available_count}/{st.available_count + st.missing_count} {t("compare.items", locale)}
                   </p>
                   {st.missing_count > 0 && (
-                    <p className="text-xs text-orange-500 mt-0.5">{st.missing_count}品 取得不可</p>
+                    <p className="text-xs text-orange-500 mt-0.5">{t("compare.unavailable", locale, { n: st.missing_count })}</p>
                   )}
                 </div>
               );
@@ -390,7 +419,7 @@ function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeN
           {/* 材料別テーブル */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-              <p className="text-xs font-semibold text-gray-600">材料別 価格比較</p>
+              <p className="text-xs font-semibold text-gray-600">{t("compare.perItemTitle", locale)}</p>
             </div>
             <div className="divide-y divide-gray-100">
               {requiredIngredients.map((ing) => {
@@ -399,9 +428,9 @@ function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeN
                   <div key={ing.ingredient_id} className={`px-4 py-2 ${isOwned ? "opacity-40" : ""}`}>
                     <div className="flex items-center justify-between mb-1">
                       <span className={`text-sm font-medium ${isOwned ? "line-through text-gray-400" : "text-gray-800"}`}>
-                        {isOwned ? "🏠 " : ""}{ing.name_ja}
+                        {isOwned ? "🏠 " : ""}{ingredientName(ing.name_ja, ing.name_en, locale)}
                       </span>
-                      <span className="text-xs text-gray-400">{ing.quantity}</span>
+                      <span className="text-xs text-gray-400">{tq(ing.quantity, locale)}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
                       {(["woolworths", "paknsave", "newworld"] as StoreKey[]).map((store) => {
@@ -420,7 +449,7 @@ function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeN
                               isOwned ? "text-gray-300" : isLowest ? "bg-blue-50 font-bold text-blue-600" : "text-gray-500"
                             }`}
                           >
-                            {product && product.in_stock ? `$${(product.sale_price ?? product.price).toFixed(2)}` : product ? "品切" : "-"}
+                            {product && product.in_stock ? `$${(product.sale_price ?? product.price).toFixed(2)}` : product ? t("compare.soldOut", locale) : "-"}
                           </div>
                         );
                       })}
@@ -436,7 +465,7 @@ function PriceComparePanel({ recipeId, recipeName }: { recipeId: string; recipeN
   );
 }
 
-function RecipeResult({ recipe, loadingPrices }: { recipe: RecipeWithPricing; loadingPrices: boolean }) {
+function RecipeResult({ recipe, loadingPrices, locale }: { recipe: RecipeWithPricing; loadingPrices: boolean; locale: Locale }) {
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [stepsOpen, setStepsOpen] = useState(false);
 
@@ -459,40 +488,40 @@ function RecipeResult({ recipe, loadingPrices }: { recipe: RecipeWithPricing; lo
         <div className="flex items-center gap-3">
           <span className="text-3xl">{emoji}</span>
           <div>
-            <h2 className="text-xl font-bold text-white">{recipe.name_ja}</h2>
-            <p className="text-orange-100 text-sm">{recipe.name_en}</p>
+            <h2 className="text-xl font-bold text-white">{recipeName(recipe.name_ja, recipe.name_en, locale, recipe.id)}</h2>
+            <p className="text-orange-100 text-sm">{locale === "ja" ? recipe.name_en : recipe.name_ja}</p>
           </div>
         </div>
-        <p className="text-orange-50 text-sm mt-2">{recipe.description}</p>
+        <p className="text-orange-50 text-sm mt-2">{recipeDescription(recipe.description, locale, recipe.id)}</p>
         <div className="flex gap-4 mt-3 text-orange-100 text-xs">
-          <span>👥 {recipe.servings}人前</span>
-          <span>⏱️ 準備 {recipe.prep_time}分</span>
-          <span>🔥 調理 {recipe.cook_time}分</span>
+          <span>👥 {t("recipe.servings", locale, { n: recipe.servings })}</span>
+          <span>⏱️ {t("recipe.prepTime", locale, { n: recipe.prep_time })}</span>
+          <span>🔥 {t("recipe.cookTime", locale, { n: recipe.cook_time })}</span>
         </div>
       </div>
       <div className="px-5 py-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-bold text-gray-800">
-            材料リスト
-            <span className="ml-2 text-sm font-normal text-gray-400">({checkedCount}/{totalCount} チェック済み)</span>
+            {t("recipe.ingredients", locale)}
+            <span className="ml-2 text-sm font-normal text-gray-400">({t("recipe.checkedCount", locale, { checked: checkedCount, total: totalCount })})</span>
           </h3>
           {checkedCount > 0 && (
-            <button onClick={() => setChecked({})} className="text-xs text-gray-400 hover:text-orange-500 transition-colors">リセット</button>
+            <button onClick={() => setChecked({})} className="text-xs text-gray-400 hover:text-orange-500 transition-colors">{t("recipe.reset", locale)}</button>
           )}
         </div>
         <div className="space-y-2">
           {recipe.ingredients.filter((i) => !i.optional).map((ingredient, idx) => {
             const originalIdx = recipe.ingredients.indexOf(ingredient);
-            return <IngredientCard key={idx} ingredient={ingredient} checked={!!checked[originalIdx]} onToggle={() => toggleItem(originalIdx)} loadingPrices={loadingPrices} />;
+            return <IngredientCard key={idx} ingredient={ingredient} checked={!!checked[originalIdx]} onToggle={() => toggleItem(originalIdx)} loadingPrices={loadingPrices} locale={locale} />;
           })}
         </div>
         {recipe.ingredients.some((i) => i.optional) && (
           <div className="mt-3">
-            <p className="text-xs text-gray-400 font-medium mb-2">お好みで</p>
+            <p className="text-xs text-gray-400 font-medium mb-2">{t("recipe.optionalSection", locale)}</p>
             <div className="space-y-2">
               {recipe.ingredients.filter((i) => i.optional).map((ingredient, idx) => {
                 const originalIdx = recipe.ingredients.indexOf(ingredient);
-                return <IngredientCard key={idx} ingredient={ingredient} checked={!!checked[originalIdx]} onToggle={() => toggleItem(originalIdx)} loadingPrices={loadingPrices} />;
+                return <IngredientCard key={idx} ingredient={ingredient} checked={!!checked[originalIdx]} onToggle={() => toggleItem(originalIdx)} loadingPrices={loadingPrices} locale={locale} />;
               })}
             </div>
           </div>
@@ -503,7 +532,7 @@ function RecipeResult({ recipe, loadingPrices }: { recipe: RecipeWithPricing; lo
           onClick={() => setStepsOpen((v) => !v)}
           className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-gray-50 transition-colors"
         >
-          <h3 className="text-base font-bold text-gray-800">作り方</h3>
+          <h3 className="text-base font-bold text-gray-800">{t("recipe.steps", locale)}</h3>
           <span className="text-gray-400 text-lg">{stepsOpen ? "▲" : "▼"}</span>
         </button>
         {stepsOpen && (
@@ -520,20 +549,20 @@ function RecipeResult({ recipe, loadingPrices }: { recipe: RecipeWithPricing; lo
         )}
       </div>
       <div className="px-5 pb-4">
-        <PriceComparePanel recipeId={recipe.id} recipeName={recipe.name_ja} />
+        <PriceComparePanel recipeId={recipe.id} recipeName={recipeName(recipe.name_ja, recipe.name_en, locale, recipe.id)} locale={locale} />
       </div>
     </div>
   );
 }
 
-function NearbyStoresPanel() {
+function NearbyStoresPanel({ locale }: { locale: Locale }) {
   const [stores, setStores] = useState<NearbyStore[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const getLocation = () => {
     if (!navigator.geolocation) {
-      setError("位置情報がサポートされていません");
+      setError(t("nearby.notSupported", locale));
       return;
     }
     setLoading(true);
@@ -547,13 +576,13 @@ function NearbyStoresPanel() {
           const data = await res.json();
           setStores(data.nearest ?? []);
         } catch {
-          setError("店舗情報の取得に失敗しました");
+          setError(t("nearby.error", locale));
         } finally {
           setLoading(false);
         }
       },
       () => {
-        setError("位置情報の取得が拒否されました");
+        setError(t("nearby.denied", locale));
         setLoading(false);
       }
     );
@@ -565,7 +594,7 @@ function NearbyStoresPanel() {
         onClick={getLocation}
         className="w-full py-3 px-4 rounded-xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-sm transition-all flex items-center justify-center gap-2"
       >
-        📍 現在地から最寄りのスーパーを探す
+        📍 {t("nearby.button", locale)}
       </button>
     );
   }
@@ -574,7 +603,7 @@ function NearbyStoresPanel() {
     return (
       <div className="py-3 text-center text-sm text-gray-400">
         <span className="animate-spin inline-block w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full mr-2" />
-        位置情報を取得中...
+        {t("nearby.loading", locale)}
       </div>
     );
   }
@@ -591,7 +620,7 @@ function NearbyStoresPanel() {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold text-gray-600">📍 最寄りのスーパー</p>
+      <p className="text-xs font-semibold text-gray-600">📍 {t("nearby.title", locale)}</p>
       <div className="grid grid-cols-2 gap-2">
         {(stores ?? []).map((store) => (
           <div
@@ -610,7 +639,7 @@ function NearbyStoresPanel() {
   );
 }
 
-function AIChatPanel() {
+function AIChatPanel({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -644,7 +673,7 @@ function AIChatPanel() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "接続エラーが発生しました。もう一度お試しください。" },
+        { role: "assistant", content: t("chat.connectionError", locale) },
       ]);
     } finally {
       setLoading(false);
@@ -666,8 +695,8 @@ function AIChatPanel() {
     <div className="fixed bottom-6 right-6 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 overflow-hidden" style={{ height: "28rem" }}>
       <div className="bg-orange-500 px-4 py-3 flex items-center justify-between shrink-0">
         <div>
-          <p className="text-white font-bold text-sm">🤖 レシピ相談</p>
-          <p className="text-orange-100 text-xs">NZで作れる料理を提案します</p>
+          <p className="text-white font-bold text-sm">🤖 {t("chat.title", locale)}</p>
+          <p className="text-orange-100 text-xs">{t("chat.subtitle", locale)}</p>
         </div>
         <button onClick={() => setOpen(false)} className="text-white text-xl hover:text-orange-200">✕</button>
       </div>
@@ -675,8 +704,8 @@ function AIChatPanel() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="text-center py-6">
-            <p className="text-gray-400 text-xs mb-3">例えば...</p>
-            {["冷蔵庫に卵と玉ねぎがある。何が作れる？", "NZで手に入りやすい日本料理は？", "カレーの隠し味を教えて"].map((q) => (
+            <p className="text-gray-400 text-xs mb-3">{t("chat.examples", locale)}</p>
+            {[t("chat.example1", locale), t("chat.example2", locale), t("chat.example3", locale)].map((q) => (
               <button
                 key={q}
                 onClick={() => { setInput(q); }}
@@ -700,7 +729,7 @@ function AIChatPanel() {
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-xl px-3 py-2 text-sm text-gray-400">考え中...</div>
+            <div className="bg-gray-100 rounded-xl px-3 py-2 text-sm text-gray-400">{t("chat.thinking", locale)}</div>
           </div>
         )}
       </div>
@@ -714,7 +743,7 @@ function AIChatPanel() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="質問を入力..."
+            placeholder={t("chat.placeholder", locale)}
             className="flex-1 text-sm px-3 py-2 rounded-xl border border-gray-200 focus:border-orange-300 focus:outline-none"
           />
           <button
@@ -722,7 +751,7 @@ function AIChatPanel() {
             disabled={!input.trim() || loading}
             className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm px-3 py-2 rounded-xl transition-colors"
           >
-            送信
+            {t("chat.send", locale)}
           </button>
         </form>
       </div>
@@ -737,6 +766,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [selectedStore, setSelectedStore] = useState<StoreKey>("woolworths");
+  const [locale, setLocale] = useState<Locale>("en");
 
   useEffect(() => {
     fetch("/api/recipes/suggestions")
@@ -773,10 +803,11 @@ export default function HomePage() {
       <header className="bg-white border-b border-orange-100 sticky top-0 z-10 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
           <span className="text-2xl">🍱</span>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">NZ Recipe Helper</h1>
-            <p className="text-xs text-gray-500">NZスーパーで日本料理の材料を見つけよう</p>
+          <div className="flex-1">
+            <h1 className="text-lg font-bold text-gray-900 leading-tight">{t("header.title", locale)}</h1>
+            <p className="text-xs text-gray-500">{t("header.subtitle", locale)}</p>
           </div>
+          <LanguageToggle locale={locale} onChange={setLocale} />
         </div>
       </header>
 
@@ -784,7 +815,7 @@ export default function HomePage() {
         {!searched && (
           <div className="text-center mb-6">
             <p className="text-gray-600 text-base leading-relaxed">
-              日本の料理を作りたい時、NZのスーパーで何を買えばいいか教えます
+              {t("hero.description", locale)}
             </p>
           </div>
         )}
@@ -794,7 +825,7 @@ export default function HomePage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="料理名を入力（例：カレーライス）"
+            placeholder={t("search.placeholder", locale)}
             className="w-full pl-12 pr-24 py-3.5 rounded-2xl border-2 border-orange-200 focus:border-orange-400 focus:outline-none bg-white text-gray-800 placeholder-gray-400 text-base shadow-sm"
           />
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400 text-xl">🔍</span>
@@ -803,7 +834,7 @@ export default function HomePage() {
             disabled={!query.trim() || loading}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
           >
-            {loading ? "検索中..." : "検索"}
+            {loading ? t("search.loading", locale) : t("search.button", locale)}
           </button>
         </form>
 
@@ -811,13 +842,13 @@ export default function HomePage() {
 
         {/* 最寄り店舗 */}
         <div className="mb-5">
-          <NearbyStoresPanel />
+          <NearbyStoresPanel locale={locale} />
         </div>
 
         {suggestions.length > 0 && (
           <div className="mb-6">
             <p className="text-xs text-gray-400 font-medium mb-2">
-              {searched ? "他のレシピ" : "レシピを選ぶ"}
+              {searched ? t("suggestions.label", locale) : t("suggestions.labelInitial", locale)}
             </p>
             <div className="flex flex-wrap gap-2">
               {suggestions.map((s) => (
@@ -826,7 +857,7 @@ export default function HomePage() {
                   onClick={() => handleSuggestionClick(s.name_ja)}
                   className="px-3 py-1.5 rounded-full text-sm font-medium bg-white border-2 border-orange-200 text-orange-600 hover:bg-orange-500 hover:border-orange-500 hover:text-white transition-all shadow-sm"
                 >
-                  {s.name_ja}
+                  {recipeName(s.name_ja, s.name_en, locale, s.id)}
                 </button>
               ))}
             </div>
@@ -836,14 +867,14 @@ export default function HomePage() {
         {!searched && (
           <div className="text-center py-12">
             <div className="text-5xl mb-4">🛒</div>
-            <p className="text-gray-400 text-sm">作りたい料理を検索するか、上のボタンから選んでください</p>
+            <p className="text-gray-400 text-sm">{t("search.emptyState", locale)}</p>
           </div>
         )}
 
         {loading && (
           <div className="text-center py-12">
             <div className="text-4xl mb-3 animate-bounce">🍳</div>
-            <p className="text-gray-400 text-sm">レシピと{STORE_LABELS[selectedStore]}の価格を取得中...</p>
+            <p className="text-gray-400 text-sm">{t("search.loadingPrices", locale, { store: STORE_LABELS[selectedStore] })}</p>
           </div>
         )}
 
@@ -853,19 +884,19 @@ export default function HomePage() {
               <div className="bg-white rounded-2xl p-6 text-center border border-gray-100 shadow-sm mb-4">
                 <div className="text-4xl mb-3">🤔</div>
                 <p className="text-gray-600 font-medium mb-1">
-                  {searchResult.message ?? "レシピが見つかりませんでした"}
+                  {searchResult.message ?? t("search.notFound", locale, { query })}
                 </p>
-                <p className="text-gray-400 text-sm">上のボタンから選んでみてください</p>
+                <p className="text-gray-400 text-sm">{t("search.notFoundHint", locale)}</p>
               </div>
             )}
             {(searchResult.results ?? []).map((recipe) => (
               <div key={recipe.id} className="mb-5">
-                <RecipeResult recipe={recipe} loadingPrices={false} />
+                <RecipeResult recipe={recipe} loadingPrices={false} locale={locale} />
               </div>
             ))}
             <div className="text-center mt-4">
               <button onClick={clearSearch} className="text-sm text-gray-400 hover:text-orange-500 transition-colors">
-                ← 最初に戻る
+                {t("search.back", locale)}
               </button>
             </div>
           </div>
@@ -873,10 +904,10 @@ export default function HomePage() {
       </main>
 
       <footer className="text-center py-6 text-xs text-gray-400">
-        NZ Recipe Helper — Pak&apos;nSave / New World / Woolworths 対応
+        {t("footer.text", locale)}
       </footer>
 
-      <AIChatPanel />
+      <AIChatPanel locale={locale} />
     </div>
   );
 }
