@@ -102,6 +102,32 @@ Rules:
   }
 }
 
+async function suggestAlternatives(ingredientName: string): Promise<string[]> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return [];
+
+  const anthropic = new Anthropic({ apiKey });
+
+  try {
+    const msg = await anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 200,
+      messages: [{
+        role: "user",
+        content: `"${ingredientName}" is not available at NZ supermarkets. Suggest 3 alternative ingredients that could substitute it and are commonly found at Woolworths/Pak'nSave/New World in New Zealand.
+
+Return ONLY a JSON array of simple 1-2 word English search terms. Example: ["rice", "sushi rice", "medium grain rice"]`,
+      }],
+    });
+
+    let text = msg.content[0].type === "text" ? msg.content[0].text : "";
+    text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+    return JSON.parse(text) as string[];
+  } catch {
+    return [];
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") ?? "";
@@ -215,13 +241,26 @@ export async function GET(request: NextRequest) {
       const searchQuery = matched?.search_query ?? aiIng.search_query;
       const ingredientId = matched?.id;
 
-      const liveProduct = await lookupIngredientPrice(searchQuery, ingredientId);
+      let liveProduct = await lookupIngredientPrice(searchQuery, ingredientId);
+      let usedName = aiIng.name_en;
+
+      if (!liveProduct) {
+        const alternatives = await suggestAlternatives(aiIng.name_en);
+        for (const alt of alternatives) {
+          const altProduct = await lookupIngredientPrice(alt);
+          if (altProduct) {
+            liveProduct = altProduct;
+            usedName = `${aiIng.name_en} → ${liveProduct.name}`;
+            break;
+          }
+        }
+      }
 
       return {
         ingredient_id: ingredientId ?? undefined,
         name_ja: aiIng.name_ja,
         name_en: aiIng.name_en,
-        nz_product: aiIng.name_en,
+        nz_product: usedName,
         quantity: aiIng.quantity,
         aisle: matched?.aisle ?? aiIng.aisle,
         optional: aiIng.optional,
