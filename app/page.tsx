@@ -223,6 +223,25 @@ function IngredientCard({
   locale: Locale;
 }) {
   const live = ingredient.liveProduct;
+  const staticSub = getSubstitution(ingredient.name_ja, locale);
+  const isOutOfStock = live && !live.inStock;
+  const needsAiSub = isOutOfStock && !staticSub;
+
+  const [aiSub, setAiSub] = useState<string | null>(null);
+  const [aiSubLoading, setAiSubLoading] = useState(false);
+  const aiSubFetched = useRef(false);
+
+  useEffect(() => {
+    if (!needsAiSub || aiSubFetched.current) return;
+    aiSubFetched.current = true;
+    setAiSubLoading(true);
+    fetch(`/api/substitution?ingredient=${encodeURIComponent(ingredient.name_ja)}&locale=${locale}`)
+      .then((r) => r.json())
+      .then((data) => { if (data.substitution) setAiSub(data.substitution); })
+      .catch(() => {})
+      .finally(() => setAiSubLoading(false));
+  }, [needsAiSub, ingredient.name_ja, locale]);
+
   return (
     <div
       className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
@@ -289,20 +308,25 @@ function IngredientCard({
           )}
         </div>
         <p className="text-xs text-gray-400 mt-0.5">💡 {ingredient.aisle}</p>
-        {(() => {
-          const sub = getSubstitution(ingredient.name_ja, locale);
-          if (!sub) return null;
-          const isOutOfStock = live && !live.inStock;
-          return (
-            <p className={`text-xs mt-1 px-2 py-1 rounded-lg ${
-              isOutOfStock
-                ? "bg-amber-100 text-amber-700 border border-amber-200"
-                : "bg-sky-50 text-sky-600 border border-sky-200"
-            }`}>
-              🔄 {sub}
-            </p>
-          );
-        })()}
+        {staticSub && (
+          <p className={`text-xs mt-1 px-2 py-1 rounded-lg ${
+            isOutOfStock
+              ? "bg-amber-100 text-amber-700 border border-amber-200"
+              : "bg-sky-50 text-sky-600 border border-sky-200"
+          }`}>
+            🔄 {staticSub}
+          </p>
+        )}
+        {aiSubLoading && (
+          <p className="text-xs mt-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 animate-pulse">
+            🤖 Finding NZ alternative...
+          </p>
+        )}
+        {aiSub && !staticSub && (
+          <p className="text-xs mt-1 px-2 py-1 rounded-lg bg-amber-100 text-amber-700 border border-amber-200">
+            🤖 {aiSub}
+          </p>
+        )}
       </div>
     </div>
   );
