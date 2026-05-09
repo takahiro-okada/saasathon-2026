@@ -140,8 +140,3 @@ pnpm dev
 | `/api/chat` | Claude Haiku | Chat assistant |
 | `/api/substitution` | Claude Haiku | Ingredient substitution |
 | `/api/recommendations` | Claude Haiku | Recipe recommendations |
-
-## Known Limitations
-
-- **Woolworths API from overseas IPs**: Some queries fail when deployed to Vercel (overseas IP). Works fine locally from NZ
-- **Pak'nSave / New World scrapers**: May return incomplete data for some products
