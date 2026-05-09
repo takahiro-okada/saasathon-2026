@@ -222,10 +222,6 @@ export default function HomePage() {
         )}
       </main>
 
-      <footer className="text-center py-6 pb-24 text-xs text-gray-400">
-        {t("footer.text", locale)}
-      </footer>
-
       <div data-onboarding="step-5">
         <BottomNav checkedCount={checkedIngredientCount} />
       </div>
