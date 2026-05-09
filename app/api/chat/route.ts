@@ -24,17 +24,10 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "メッセージが必要です" }, { status: 400 });
   }
 
-  const { data: recipes } = await supabase
-    .from("recipes")
-    .select("name_ja, name_en");
-
   const { data: ingredients } = await supabase
     .from("ingredients")
     .select("name_ja, name_en, category");
 
-  const recipeList = (recipes ?? [])
-    .map((r) => `${r.name_ja} (${r.name_en})`)
-    .join(", ");
   const ingredientList = (ingredients ?? [])
     .map((i) => `${i.name_ja}(${i.name_en})`)
     .join(", ");
@@ -46,15 +39,15 @@ export async function POST(request: NextRequest) {
 
   const systemPrompt = `あなたはNZに住む日本人のための料理アシスタントです。NZのスーパー（Woolworths、Pak'nSave、New World）で手に入る食材を使った日本料理のアドバイスをします。
 
-対応レシピ: ${recipeList}
-DB登録済み食材: ${ingredientList}${ownedContext}
+このアプリはAIでどんな日本料理のレシピでも生成でき、NZのスーパーで食材の価格を比較できます。
+DB登録済み食材（価格キャッシュあり）: ${ingredientList}${ownedContext}
 
 ルール:
 - 日本語で回答する
 - NZで手に入りにくい食材の代替品を提案する
 - ユーザーが持っている食材がある場合、追加購入が少ないレシピを優先的に提案する
 - 回答は簡潔に（3-5文程度）
-- 対応レシピにあるものを優先的に勧める（アプリで価格比較できるため）`;
+- どんな日本料理でも検索できることをユーザーに伝える`;
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {

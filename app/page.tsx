@@ -89,7 +89,7 @@ interface CompareIngredient {
 }
 
 interface CompareResponse {
-  recipe: { id: string; name_ja: string; name_en: string; servings: number };
+  recipe: { name: string };
   ingredients: CompareIngredient[];
   store_totals: StoreTotal[];
   cheapest: StoreKey | null;
@@ -368,7 +368,7 @@ function IngredientCard({
   );
 }
 
-function PriceComparePanel({ recipeId, recipeName, locale }: { recipeId: string; recipeName: string; locale: Locale }) {
+function PriceComparePanel({ recipeId, recipeName, locale, ingredients: recipeIngredients }: { recipeId: string; recipeName: string; locale: Locale; ingredients: IngredientWithPricing[] }) {
   const [data, setData] = useState<CompareResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -380,7 +380,21 @@ function PriceComparePanel({ recipeId, recipeName, locale }: { recipeId: string;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/recipes/compare?recipe_id=${encodeURIComponent(recipeId)}`);
+      const res = await fetch("/api/recipes/compare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipe_name: recipeName,
+          ingredients: recipeIngredients.map((i) => ({
+            ingredient_id: i.ingredient_id,
+            name_ja: i.name_ja,
+            name_en: i.name_en,
+            quantity: i.quantity,
+            optional: i.optional,
+            search_query: i.nz_product,
+          })),
+        }),
+      });
       if (!res.ok) throw new Error();
       const json: CompareResponse = await res.json();
       setData(json);
@@ -672,7 +686,7 @@ function RecipeResult({ recipe, loadingPrices, locale }: { recipe: RecipeWithPri
         )}
       </div>
       <div className="px-5 pb-4">
-        <PriceComparePanel recipeId={recipe.id} recipeName={recipeName(recipe.name_ja, recipe.name_en, locale, recipe.id)} locale={locale} />
+        <PriceComparePanel recipeId={recipe.id} recipeName={recipeName(recipe.name_ja, recipe.name_en, locale, recipe.id)} locale={locale} ingredients={recipe.ingredients} />
       </div>
     </div>
   );

@@ -110,10 +110,10 @@ async function getNearestStores(
 }
 
 async function getProductForStore(
-  ingredientId: string,
   searchQuery: string,
   brand: StoreKey,
-  storeLocationId: string | null
+  ingredientId?: string,
+  storeLocationId?: string | null
 ): Promise<{
   product_name: string;
   price: number;
@@ -122,48 +122,27 @@ async function getProductForStore(
   in_stock: boolean;
   unit_price?: string;
 } | null> {
-  let query = supabase
-    .from("store_products")
-    .select("*")
-    .eq("ingredient_id", ingredientId)
-    .eq("store", brand)
-    .gte(
-      "scraped_at",
-      new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    )
-    .order("scraped_at", { ascending: false })
-    .limit(1);
-
-  if (storeLocationId) {
-    query = query.eq("store_location_id", storeLocationId);
-  }
-
-  const { data: cached } = await query;
-
-  if (cached && cached.length > 0) {
-    const c = cached[0];
-    return {
-      product_name: c.product_name,
-      price: Number(c.price),
-      sale_price: c.sale_price ? Number(c.sale_price) : undefined,
-      image_url: c.image_url ?? "",
-      in_stock: c.in_stock,
-      unit_price: c.unit_price ?? undefined,
-    };
-  }
-
-  // Fallback: try without store_location_id filter (legacy data)
-  if (storeLocationId) {
-    const { data: fallback } = await supabase
+  if (ingredientId) {
+    let query = supabase
       .from("store_products")
       .select("*")
       .eq("ingredient_id", ingredientId)
       .eq("store", brand)
+      .gte(
+        "scraped_at",
+        new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      )
       .order("scraped_at", { ascending: false })
       .limit(1);
 
-    if (fallback && fallback.length > 0) {
-      const c = fallback[0];
+    if (storeLocationId) {
+      query = query.eq("store_location_id", storeLocationId);
+    }
+
+    const { data: cached } = await query;
+
+    if (cached && cached.length > 0) {
+      const c = cached[0];
       return {
         product_name: c.product_name,
         price: Number(c.price),
@@ -175,29 +154,29 @@ async function getProductForStore(
     }
   }
 
-  // Last resort: live scrape
   try {
     const searchFn = getSearchFn(brand);
     const products = await searchFn(searchQuery);
     if (products.length > 0) {
       const p = products[0];
-      supabase
-        .from("store_products")
-        .insert({
-          ingredient_id: ingredientId,
-          store: brand,
-          store_location_id: storeLocationId,
-          product_name: p.name,
-          brand: p.brand,
-          price: p.price,
-          sale_price: p.salePrice ?? null,
-          image_url: p.imageUrl,
-          in_stock: p.inStock,
-          size: p.size,
-          unit_price: p.unitPrice ?? null,
-        })
-        .then(() => {});
-
+      if (ingredientId) {
+        supabase
+          .from("store_products")
+          .insert({
+            ingredient_id: ingredientId,
+            store: brand,
+            store_location_id: storeLocationId ?? null,
+            product_name: p.name,
+            brand: p.brand,
+            price: p.price,
+            sale_price: p.salePrice ?? null,
+            image_url: p.imageUrl,
+            in_stock: p.inStock,
+            size: p.size,
+            unit_price: p.unitPrice ?? null,
+          })
+          .then(() => {});
+      }
       return {
         product_name: p.name,
         price: p.price,
@@ -213,27 +192,26 @@ async function getProductForStore(
   return null;
 }
 
-export async function GET(request: NextRequest) {
-  const params = new URL(request.url).searchParams;
-  const recipeId = params.get("recipe_id") ?? "";
-  const lat = parseFloat(params.get("lat") ?? "");
-  const lng = parseFloat(params.get("lng") ?? "");
+interface CompareIngredient {
+  ingredient_id?: string;
+  name_ja: string;
+  name_en: string;
+  quantity: string;
+  optional: boolean;
+  search_query?: string;
+}
 
-  if (!recipeId.trim()) {
-    return Response.json({ error: "recipe_id is required" }, { status: 400 });
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const ingredients: CompareIngredient[] = body.ingredients ?? [];
+  const recipeName: string = body.recipe_name ?? "";
+  const lat = parseFloat(body.lat ?? "");
+  const lng = parseFloat(body.lng ?? "");
+
+  if (ingredients.length === 0) {
+    return Response.json({ error: "ingredients are required" }, { status: 400 });
   }
 
-  const { data: recipe } = await supabase
-    .from("recipes")
-    .select("*")
-    .eq("id", recipeId)
-    .single();
-
-  if (!recipe) {
-    return Response.json({ error: "Recipe not found" }, { status: 404 });
-  }
-
-  // Determine which stores to compare
   let compareStores: StoreLocationInfo[];
   if (!isNaN(lat) && !isNaN(lng)) {
     compareStores = await getNearestStores(lat, lng);
@@ -246,39 +224,16 @@ export async function GET(request: NextRequest) {
     }));
   }
 
-  const { data: recipeIngredients } = await supabase
-    .from("recipe_ingredients")
-    .select(
-      `
-      quantity,
-      is_optional,
-      sort_order,
-      ingredients (
-        id,
-        name_ja,
-        name_en,
-        search_query,
-        aisle,
-        is_optional
-      )
-    `
-    )
-    .eq("recipe_id", recipeId)
-    .order("sort_order");
-
-  const ingredients: IngredientPrice[] = await Promise.all(
-    (recipeIngredients ?? []).map(async (ri) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawIng = ri.ingredients as any;
-      const ing = Array.isArray(rawIng) ? rawIng[0] : rawIng;
-      if (!ing) return null as unknown as IngredientPrice;
+  const priceResults: IngredientPrice[] = await Promise.all(
+    ingredients.map(async (ing) => {
+      const searchQuery = ing.search_query ?? ing.name_en;
 
       const storeResults = await Promise.all(
         compareStores.map(async (cs) => {
           const product = await getProductForStore(
-            ing.id,
-            ing.search_query,
+            searchQuery,
             cs.brand,
+            ing.ingredient_id,
             cs.id || null
           );
           return [cs.id || cs.brand, product] as const;
@@ -286,18 +241,17 @@ export async function GET(request: NextRequest) {
       );
 
       return {
-        ingredient_id: ing.id,
+        ingredient_id: ing.ingredient_id ?? ing.name_en,
         name_ja: ing.name_ja,
         name_en: ing.name_en,
-        quantity: ri.quantity,
-        is_optional: ri.is_optional,
+        quantity: ing.quantity,
+        is_optional: ing.optional,
         stores: Object.fromEntries(storeResults),
       };
     })
   );
 
-  const validIngredients = ingredients.filter(Boolean);
-  const requiredIngredients = validIngredients.filter((i) => !i.is_optional);
+  const requiredIngredients = priceResults.filter((i) => !i.is_optional);
 
   const storeTotals: StoreTotal[] = compareStores.map((cs) => {
     const key = cs.id || cs.brand;
@@ -333,15 +287,10 @@ export async function GET(request: NextRequest) {
   });
 
   return Response.json({
-    recipe: {
-      id: recipe.id,
-      name_ja: recipe.name_ja,
-      name_en: recipe.name_en,
-      servings: recipe.servings,
-    },
-    ingredients: validIngredients,
+    recipe: { name: recipeName },
+    ingredients: priceResults,
     store_totals: storeTotals,
-    cheapest: storeTotals[0] ?? null,
+    cheapest: storeTotals[0]?.store ?? null,
     compare_stores: compareStores,
   });
 }
