@@ -1540,6 +1540,24 @@ export default function HomePage() {
   const [selectedStore, setSelectedStore] = useState<StoreKey>("woolworths");
   const [locale, setLocale] = useState<Locale>("en");
   const [checkedIngredientCount, setCheckedIngredientCount] = useState(0);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY < 10) {
+        setHeaderVisible(true);
+      } else if (currentY > lastScrollY.current + 5) {
+        setHeaderVisible(false);
+      } else if (currentY < lastScrollY.current - 5) {
+        setHeaderVisible(true);
+      }
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     fetch("/api/recipes/suggestions")
@@ -1618,7 +1636,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#F7F3EC]">
-      <header className="bg-white border-b border-[#EDE8DF] sticky top-0 z-10 shadow-sm">
+      <header
+        className={`bg-white border-b border-[#EDE8DF] sticky top-0 z-10 shadow-sm transition-transform duration-300 ${
+          headerVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
           <span className="text-2xl">🍱</span>
           <div className="flex-1">
