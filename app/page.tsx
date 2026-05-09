@@ -16,12 +16,10 @@ import { RecipeResult } from "@/components/recipe-result";
 import { AIChatPanel } from "@/components/ai-chat-panel";
 
 export default function HomePage() {
-  const [showWelcome, setShowWelcome] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("nzrh_onboarding_done") !== "true";
-    }
-    return true;
-  });
+  // 1. Initial states set to neutral values to match Server-Side Rendering
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+
   const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<RecipeSuggestion[]>([]);
@@ -33,6 +31,15 @@ export default function HomePage() {
   const [checkedIngredientCount, setCheckedIngredientCount] = useState(0);
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
+
+  // 2. Handle Hydration: Only check localStorage after the component mounts in the browser
+  useEffect(() => {
+    setHasMounted(true);
+    const isDone = localStorage.getItem("nzrh_onboarding_done");
+    if (isDone !== "true") {
+      setShowWelcome(true);
+    }
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -107,6 +114,11 @@ export default function HomePage() {
     setOnboardingStep(null);
     localStorage.setItem("nzrh_onboarding_done", "true");
   };
+
+  // 3. Prevent rendering anything until the client has mounted to avoid UI mismatch
+  if (!hasMounted) {
+    return <div className="min-h-screen bg-[#F7F3EC]" />; // Return an empty shell with the same background
+  }
 
   if (showWelcome) {
     return <WelcomePage onGetStarted={handleGetStarted} />;
