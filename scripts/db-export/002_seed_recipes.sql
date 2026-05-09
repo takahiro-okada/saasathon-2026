@@ -1,4 +1,4 @@
--- NZ Recipe Helper - Seed Data: Recipes
+-- ShopMate - Seed Data: Recipes
 -- 8 recipes
 
 INSERT INTO recipes (id, name_ja, name_en, description, servings, prep_time, cook_time, steps) VALUES

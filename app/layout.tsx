@@ -19,8 +19,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "NZ Recipe Helper",
-  description: "日本の料理を作りたい時、NZのスーパーで何を買えばいいか教えます",
+  title: "ShopMate",
+  description: "Find what you need at NZ supermarkets — in your language, at the best price",
 };
 
 export default function RootLayout({

@@ -1,4 +1,4 @@
-# NZ Recipe Helper
+# ShopMate
 
 Cook Japanese food with confidence in New Zealand. Search any dish, find ingredients at local supermarkets, compare prices across stores, and get smart substitutions for hard-to-find items.
 

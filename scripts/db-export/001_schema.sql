@@ -1,4 +1,4 @@
--- NZ Recipe Helper - Full Schema + RLS Policies
+-- ShopMate - Full Schema + RLS Policies
 -- Run this on a fresh Supabase project to recreate the database
 
 -- ============================================================

@@ -1,4 +1,4 @@
--- NZ Recipe Helper - Seed Data: Recipe-Ingredient relationships (66 rows)
+-- ShopMate - Seed Data: Recipe-Ingredient relationships (66 rows)
 
 INSERT INTO recipe_ingredients (id, recipe_id, ingredient_id, quantity, is_optional, sort_order) VALUES
 -- Okonomiyaki (9)
