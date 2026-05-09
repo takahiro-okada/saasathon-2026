@@ -1,5 +1,5 @@
 ![CI Status](https://github.com/takahiro-okada/saasathon-2026/actions/workflows/ci.yml/badge.svg)
-![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)
 
