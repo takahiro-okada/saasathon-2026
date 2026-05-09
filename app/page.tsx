@@ -166,7 +166,7 @@ export default function HomePage() {
               {suggestions.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => handleSuggestionClick(s.name_ja)}
+                  onClick={() => handleSuggestionClick(locale === "en" ? s.name_en : s.name_ja)}
                   className="px-3 py-1.5 rounded-full text-sm font-medium bg-white border-2 border-[#4A6741]/20 text-[#4A6741] hover:bg-[#4A6741] hover:border-[#4A6741] hover:text-white transition-all shadow-sm"
                 >
                   {recipeName(s.name_ja, s.name_en, locale, s.id)}
