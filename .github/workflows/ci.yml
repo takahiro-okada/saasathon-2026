@@ -41,6 +41,18 @@ jobs:
       - name: Lint check
         run: pnpm run lint
 
+      - name: Run tests
+        run: pnpm run test --ci --coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Build
         run: pnpm run build
         env:
