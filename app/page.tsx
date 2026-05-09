@@ -379,6 +379,182 @@ function BottomNav({ checkedCount }: { checkedCount: number }) {
   );
 }
 
+// ---- Onboarding Overlay ----
+
+interface OnboardingStep {
+  target: string;
+  title: string;
+  description: string;
+  position: "above" | "below";
+}
+
+const ONBOARDING_STEPS: OnboardingStep[] = [
+  {
+    target: "step-1",
+    title: "Search for any dish",
+    description: "Type a Japanese dish name in English or Japanese — we'll find the ingredients you need.",
+    position: "below",
+  },
+  {
+    target: "step-2",
+    title: "Pick your supermarket",
+    description: "Choose which store to check prices at. We'll show real-time availability and pricing.",
+    position: "below",
+  },
+  {
+    target: "step-3",
+    title: "Try popular recipes",
+    description: "Not sure what to cook? Pick from our most popular Japanese dishes to get started.",
+    position: "below",
+  },
+  {
+    target: "step-4",
+    title: "Find stores near you",
+    description: "See which supermarkets are closest to you and compare distances.",
+    position: "below",
+  },
+  {
+    target: "step-5",
+    title: "Navigate the app",
+    description: "Use the bottom bar to switch between Home, Search, your Saved recipes, Shopping List, and Profile.",
+    position: "above",
+  },
+];
+
+function OnboardingOverlay({
+  step,
+  onNext,
+  onSkip,
+}: {
+  step: number;
+  onNext: () => void;
+  onSkip: () => void;
+}) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const padding = 8;
+  const stepConfig = ONBOARDING_STEPS[step];
+
+  const updateRect = useCallback(() => {
+    if (!stepConfig) return;
+    const el = document.querySelector(`[data-onboarding="${stepConfig.target}"]`);
+    if (el) {
+      setRect(el.getBoundingClientRect());
+    }
+  }, [stepConfig]);
+
+  useEffect(() => {
+    updateRect();
+    window.addEventListener("resize", updateRect);
+    window.addEventListener("scroll", updateRect);
+    return () => {
+      window.removeEventListener("resize", updateRect);
+      window.removeEventListener("scroll", updateRect);
+    };
+  }, [updateRect]);
+
+  if (!rect || !stepConfig) return null;
+
+  const isLastStep = step === ONBOARDING_STEPS.length - 1;
+  const tooltipWidth = 320;
+  const tooltipLeft = Math.max(16, Math.min(rect.left, window.innerWidth - tooltipWidth - 16));
+
+  const spotlightTop = rect.top - padding;
+  const spotlightLeft = rect.left - padding;
+  const spotlightWidth = rect.width + padding * 2;
+  const spotlightHeight = rect.height + padding * 2;
+
+  const tooltipTop =
+    stepConfig.position === "below"
+      ? rect.bottom + padding + 16
+      : rect.top - padding - 16 - 130; // approximate tooltip height
+
+  // Arrow direction
+  const arrowIsAbove = stepConfig.position === "below"; // arrow points up (tooltip is below target)
+  const arrowLeft = Math.max(16, Math.min(rect.left + rect.width / 2 - tooltipLeft - 10, tooltipWidth - 32));
+
+  return (
+    <>
+      {/* Spotlight cutout */}
+      <div
+        className="fixed z-50 transition-all duration-300 ease-in-out"
+        style={{
+          top: spotlightTop,
+          left: spotlightLeft,
+          width: spotlightWidth,
+          height: spotlightHeight,
+          borderRadius: 12,
+          boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.6)",
+          animation: "spotlight-pulse 2s ease-in-out infinite",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Tooltip card */}
+      <div
+        className="fixed z-50 bg-white rounded-2xl shadow-lg p-5 transition-all duration-300"
+        style={{
+          top: tooltipTop,
+          left: tooltipLeft,
+          width: tooltipWidth,
+          pointerEvents: "auto",
+        }}
+      >
+        {/* Arrow */}
+        {arrowIsAbove ? (
+          <div
+            className="absolute w-0 h-0"
+            style={{
+              top: -10,
+              left: arrowLeft,
+              borderLeft: "10px solid transparent",
+              borderRight: "10px solid transparent",
+              borderBottom: "10px solid white",
+            }}
+          />
+        ) : (
+          <div
+            className="absolute w-0 h-0"
+            style={{
+              bottom: -10,
+              left: arrowLeft,
+              borderLeft: "10px solid transparent",
+              borderRight: "10px solid transparent",
+              borderTop: "10px solid white",
+            }}
+          />
+        )}
+
+        {/* Step indicator */}
+        <p className="text-xs font-medium text-[#8BAF7E] mb-1">
+          {step + 1} / {ONBOARDING_STEPS.length}
+        </p>
+
+        {/* Title */}
+        <h3 className="font-semibold text-lg text-[#2D2D2D] mb-1">{stepConfig.title}</h3>
+
+        {/* Description */}
+        <p className="text-sm text-gray-600 mb-4">{stepConfig.description}</p>
+
+        {/* Buttons */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onSkip}
+            className="text-[#9A9A9A] hover:text-[#5A5A5A] text-sm transition-colors"
+          >
+            Skip
+          </button>
+          <button
+            onClick={onNext}
+            className="bg-[#4A6741] text-white rounded-full px-6 py-2 text-sm font-semibold hover:bg-[#3D5736] transition-colors"
+          >
+            {isLastStep ? "Done" : "Next"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ---- Welcome Page ----
 
 function WelcomePage({ onGetStarted }: { onGetStarted: () => void }) {
@@ -1336,7 +1512,13 @@ function AIInsightsPanel({
 }
 
 export default function HomePage() {
-  const [showWelcome, setShowWelcome] = useState<boolean>(true);
+  const [showWelcome, setShowWelcome] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("nzrh_onboarding_done") !== "true";
+    }
+    return true;
+  });
+  const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<RecipeSuggestion[]>([]);
   const [searchResult, setSearchResult] = useState<SearchResponse | null>(null);
@@ -1397,8 +1579,28 @@ export default function HomePage() {
     setCheckedIngredientCount(0);
   }, [searchResult]);
 
+  const handleGetStarted = () => {
+    setShowWelcome(false);
+    setOnboardingStep(0);
+  };
+
+  const handleOnboardingNext = () => {
+    if (onboardingStep === null) return;
+    if (onboardingStep < ONBOARDING_STEPS.length - 1) {
+      setOnboardingStep(onboardingStep + 1);
+    } else {
+      setOnboardingStep(null);
+      localStorage.setItem("nzrh_onboarding_done", "true");
+    }
+  };
+
+  const handleOnboardingSkip = () => {
+    setOnboardingStep(null);
+    localStorage.setItem("nzrh_onboarding_done", "true");
+  };
+
   if (showWelcome) {
-    return <WelcomePage onGetStarted={() => setShowWelcome(false)} />;
+    return <WelcomePage onGetStarted={handleGetStarted} />;
   }
 
   return (
@@ -1423,7 +1625,7 @@ export default function HomePage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="relative mb-5">
+        <form onSubmit={handleSubmit} className="relative mb-5" data-onboarding="step-1">
           <input
             type="text"
             value={query}
@@ -1441,10 +1643,12 @@ export default function HomePage() {
           </button>
         </form>
 
-        <StoreTabs selected={selectedStore} onChange={handleStoreChange} />
+        <div data-onboarding="step-2">
+          <StoreTabs selected={selectedStore} onChange={handleStoreChange} />
+        </div>
 
         {/* 最寄り店舗 */}
-        <div className="mb-5">
+        <div className="mb-5" data-onboarding="step-4">
           <NearbyStoresPanel locale={locale} />
         </div>
 
@@ -1453,7 +1657,7 @@ export default function HomePage() {
         )}
 
         {suggestions.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6" data-onboarding="step-3">
             <p className="text-xs text-gray-400 font-medium mb-2">
               {searched ? t("suggestions.label", locale) : t("suggestions.labelInitial", locale)}
             </p>
@@ -1514,8 +1718,17 @@ export default function HomePage() {
         {t("footer.text", locale)}
       </footer>
 
-      <BottomNav checkedCount={checkedIngredientCount} />
+      <div data-onboarding="step-5">
+        <BottomNav checkedCount={checkedIngredientCount} />
+      </div>
       <AIChatPanel locale={locale} showWelcome={showWelcome} />
+      {onboardingStep !== null && (
+        <OnboardingOverlay
+          step={onboardingStep}
+          onNext={handleOnboardingNext}
+          onSkip={handleOnboardingSkip}
+        />
+      )}
     </div>
   );
 }
