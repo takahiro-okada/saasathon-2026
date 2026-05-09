@@ -157,6 +157,7 @@ export async function GET(request: NextRequest) {
           }
 
           return {
+            ingredient_id: ing.id,
             name_ja: ing.name_ja,
             name_en: ing.name_en,
             nz_product: ing.name_en,

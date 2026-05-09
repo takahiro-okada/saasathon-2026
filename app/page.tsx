@@ -32,6 +32,13 @@ function logActivity(data: {
   }).catch(() => {});
 }
 
+interface CrossStoreAlt {
+  store: StoreKey;
+  product_name: string;
+  price: number;
+  sale_price: number | null;
+}
+
 interface AIInsight {
   type: "cost_saving" | "pattern" | "inventory";
   title: string;
@@ -230,6 +237,21 @@ function IngredientCard({
   const [aiSub, setAiSub] = useState<string | null>(null);
   const [aiSubLoading, setAiSubLoading] = useState(false);
   const aiSubFetched = useRef(false);
+  const [crossStore, setCrossStore] = useState<CrossStoreAlt[]>([]);
+  const crossStoreFetched = useRef(false);
+
+  useEffect(() => {
+    if (!isOutOfStock || crossStoreFetched.current || !ingredient.ingredient_id) return;
+    crossStoreFetched.current = true;
+    fetch(`/api/ingredients/cross-store?ingredient_id=${encodeURIComponent(ingredient.ingredient_id)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const alts = (data.alternatives ?? []) as CrossStoreAlt[];
+        const otherStore = alts.filter((a) => a.store !== live?.store);
+        setCrossStore(otherStore);
+      })
+      .catch(() => {});
+  }, [isOutOfStock, ingredient.ingredient_id, live?.store]);
 
   useEffect(() => {
     if (!needsAiSub || aiSubFetched.current) return;
@@ -308,6 +330,20 @@ function IngredientCard({
           )}
         </div>
         <p className="text-xs text-gray-400 mt-0.5">💡 {ingredient.aisle}</p>
+        {isOutOfStock && crossStore.length > 0 && (
+          <div className="mt-1 space-y-1">
+            {crossStore.map((alt) => {
+              const effectivePrice = alt.sale_price ?? alt.price;
+              return (
+                <p key={alt.store} className="text-xs px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  🏪 {STORE_LABELS[alt.store]}: ${effectivePrice.toFixed(2)}
+                  {alt.sale_price && <span className="ml-1 text-red-500 font-medium">SALE</span>}
+                  <span className="ml-1 text-emerald-500">({t("ingredient.inStock", locale)})</span>
+                </p>
+              );
+            })}
+          </div>
+        )}
         {staticSub && (
           <p className={`text-xs mt-1 px-2 py-1 rounded-lg ${
             isOutOfStock

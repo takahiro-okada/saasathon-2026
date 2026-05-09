@@ -1,4 +1,5 @@
 export interface Ingredient {
+  ingredient_id?: string;
   name_ja: string;
   name_en: string;
   nz_product: string;
