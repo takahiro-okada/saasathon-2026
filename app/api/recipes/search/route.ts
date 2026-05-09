@@ -128,6 +128,93 @@ Return ONLY a JSON array of simple 1-2 word English search terms. Example: ["ric
   }
 }
 
+async function findCachedRecipe(query: string, locale: Locale) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const { data: recipes } = await supabase
+    .from("recipes")
+    .select("*")
+    .or(`name_en.ilike.%${normalizedQuery}%,name_ja.ilike.%${normalizedQuery}%,id.ilike.%${normalizedQuery}%`)
+    .limit(1);
+
+  if (!recipes || recipes.length === 0) return null;
+
+  const recipe = recipes[0];
+
+  const { data: recipeIngs } = await supabase
+    .from("recipe_ingredients")
+    .select("*, ingredients(*)")
+    .eq("recipe_id", recipe.id)
+    .order("sort_order", { ascending: true });
+
+  if (!recipeIngs || recipeIngs.length === 0) return null;
+
+  return {
+    recipe,
+    ingredients: recipeIngs.map((ri: { quantity: string; is_optional: boolean; ingredients: { id: string; name_ja: string; name_en: string; search_query: string; aisle: string } }) => ({
+      ingredient_id: ri.ingredients.id,
+      name_ja: ri.ingredients.name_ja,
+      name_en: ri.ingredients.name_en,
+      search_query: ri.ingredients.search_query,
+      aisle: ri.ingredients.aisle,
+      quantity: ri.quantity,
+      optional: ri.is_optional,
+    })),
+  };
+}
+
+async function saveRecipeToDB(aiRecipe: AIRecipe): Promise<void> {
+  await supabase.from("recipes").upsert({
+    id: aiRecipe.id,
+    name_ja: aiRecipe.name_ja,
+    name_en: aiRecipe.name_en,
+    description: aiRecipe.description,
+    servings: aiRecipe.servings,
+    prep_time: aiRecipe.prep_time,
+    cook_time: aiRecipe.cook_time,
+    steps: aiRecipe.steps,
+  });
+
+  for (let i = 0; i < aiRecipe.ingredients.length; i++) {
+    const aiIng = aiRecipe.ingredients[i];
+
+    const { data: existing } = await supabase
+      .from("ingredients")
+      .select("id")
+      .or(`name_en.ilike.${aiIng.name_en},search_query.ilike.${aiIng.search_query}`)
+      .limit(1);
+
+    let ingredientId: string;
+
+    if (existing && existing.length > 0) {
+      ingredientId = existing[0].id;
+    } else {
+      const { data: inserted } = await supabase
+        .from("ingredients")
+        .insert({
+          name_ja: aiIng.name_ja,
+          name_en: aiIng.name_en,
+          search_query: aiIng.search_query,
+          aisle: aiIng.aisle,
+          is_optional: aiIng.optional,
+        })
+        .select("id")
+        .single();
+
+      if (!inserted) continue;
+      ingredientId = inserted.id;
+    }
+
+    await supabase.from("recipe_ingredients").insert({
+      recipe_id: aiRecipe.id,
+      ingredient_id: ingredientId,
+      quantity: aiIng.quantity,
+      is_optional: aiIng.optional,
+      sort_order: i,
+    });
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") ?? "";
@@ -218,7 +305,44 @@ export async function GET(request: NextRequest) {
     return liveProduct;
   }
 
-  // AI generates recipe for any dish in any language
+  // 1. Check DB cache first
+  const cached = await findCachedRecipe(query, locale);
+
+  if (cached) {
+    const ingredients = await Promise.all(
+      cached.ingredients.map(async (ing) => {
+        const liveProduct = await lookupIngredientPrice(ing.search_query, ing.ingredient_id);
+        return {
+          ingredient_id: ing.ingredient_id,
+          name_ja: ing.name_ja,
+          name_en: ing.name_en,
+          nz_product: ing.name_en,
+          quantity: ing.quantity,
+          aisle: ing.aisle,
+          optional: ing.optional,
+          liveProduct,
+        };
+      })
+    );
+
+    return Response.json({
+      results: [{
+        id: cached.recipe.id,
+        name_ja: cached.recipe.name_ja,
+        name_en: cached.recipe.name_en,
+        description: cached.recipe.description,
+        servings: cached.recipe.servings,
+        prep_time: cached.recipe.prep_time,
+        cook_time: cached.recipe.cook_time,
+        steps: cached.recipe.steps,
+        ingredients,
+      }],
+      store,
+      ai_generated: false,
+    });
+  }
+
+  // 2. AI generates recipe (cache miss)
   const aiRecipe = await generateRecipeWithAI(query, locale);
 
   if (!aiRecipe) {
@@ -228,7 +352,10 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Match AI ingredients against DB ingredients for cached price data
+  // 3. Save to DB for next time (non-blocking)
+  saveRecipeToDB(aiRecipe).catch(() => {});
+
+  // 4. Match AI ingredients against DB ingredients for price data
   const ingredients = await Promise.all(
     aiRecipe.ingredients.map(async (aiIng) => {
       const { data: dbMatch } = await supabase
