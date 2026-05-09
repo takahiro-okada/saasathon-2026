@@ -130,14 +130,6 @@ export default function HomePage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 pb-24">
-        {!searched && (
-          <div className="text-center mb-6">
-            <p className="text-gray-600 text-base leading-relaxed">
-              {t("hero.description", locale)}
-            </p>
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="relative mb-5" data-onboarding="step-1">
           <input
             type="text"
