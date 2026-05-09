@@ -1742,15 +1742,6 @@ export default function HomePage() {
           <StoreTabs selected={selectedStore} onChange={handleStoreChange} />
         </div>
 
-        {/* 最寄り店舗 */}
-        <div className="mb-5" data-onboarding="step-4">
-          <NearbyStoresPanel locale={locale} />
-        </div>
-
-        {!searched && (
-          <AIInsightsPanel locale={locale} onRecipeClick={handleInsightRecipeClick} />
-        )}
-
         {suggestions.length > 0 && (
           <div className="mb-6" data-onboarding="step-3">
             <p className="text-xs text-gray-400 font-medium mb-2">
