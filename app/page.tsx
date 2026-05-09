@@ -431,6 +431,8 @@ function OnboardingOverlay({
   onSkip: () => void;
 }) {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [tooltipHeight, setTooltipHeight] = useState(200);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const padding = 8;
   const stepConfig = ONBOARDING_STEPS[step];
 
@@ -452,6 +454,12 @@ function OnboardingOverlay({
     };
   }, [updateRect]);
 
+  useEffect(() => {
+    if (tooltipRef.current) {
+      setTooltipHeight(tooltipRef.current.getBoundingClientRect().height);
+    }
+  }, [step, rect]);
+
   if (!rect || !stepConfig) return null;
 
   const isLastStep = step === ONBOARDING_STEPS.length - 1;
@@ -463,10 +471,14 @@ function OnboardingOverlay({
   const spotlightWidth = rect.width + padding * 2;
   const spotlightHeight = rect.height + padding * 2;
 
-  const tooltipTop =
+  let tooltipTop =
     stepConfig.position === "below"
       ? rect.bottom + padding + 16
-      : rect.top - padding - 16 - 130; // approximate tooltip height
+      : rect.top - padding - 16 - tooltipHeight;
+
+  if (tooltipTop < 16) tooltipTop = 16;
+  if (tooltipTop + tooltipHeight > window.innerHeight - 16)
+    tooltipTop = window.innerHeight - tooltipHeight - 16;
 
   // Arrow direction
   const arrowIsAbove = stepConfig.position === "below"; // arrow points up (tooltip is below target)
@@ -491,6 +503,7 @@ function OnboardingOverlay({
 
       {/* Tooltip card */}
       <div
+        ref={tooltipRef}
         className="fixed z-50 bg-white rounded-2xl shadow-lg p-5 transition-all duration-300"
         style={{
           top: tooltipTop,
