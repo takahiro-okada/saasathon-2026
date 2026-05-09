@@ -2,14 +2,90 @@ import { NextRequest } from "next/server";
 import { supabase } from "@/app/lib/supabase";
 import { searchWoolworths, searchPaknsave, searchNewworld } from "@/app/lib/scraper";
 import type { SupermarketProduct } from "@/app/lib/scraper";
+import Anthropic from "@anthropic-ai/sdk";
 
 type StoreKey = "woolworths" | "paknsave" | "newworld";
+
+interface AIIngredient {
+  name_ja: string;
+  name_en: string;
+  quantity: string;
+  search_query: string;
+  aisle: string;
+  optional: boolean;
+}
+
+interface AIRecipe {
+  id: string;
+  name_ja: string;
+  name_en: string;
+  description: string;
+  servings: number;
+  prep_time: number;
+  cook_time: number;
+  steps: string[];
+  ingredients: AIIngredient[];
+}
 
 function getSearchFn(store: StoreKey): (q: string) => Promise<SupermarketProduct[]> {
   switch (store) {
     case "paknsave": return searchPaknsave;
     case "newworld": return searchNewworld;
     default: return searchWoolworths;
+  }
+}
+
+async function generateRecipeWithAI(query: string): Promise<AIRecipe | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+
+  const anthropic = new Anthropic({ apiKey });
+
+  const prompt = `You are a Japanese cooking expert. Generate a recipe for "${query}".
+The input may be in any language (English, Japanese, Chinese, etc.) — interpret it as a dish name.
+
+Return ONLY valid JSON (no markdown, no code fences):
+{
+  "id": "kebab-style-id",
+  "name_ja": "Japanese name",
+  "name_en": "English name",
+  "description": "Japanese description of the dish",
+  "servings": 2,
+  "prep_time": 15,
+  "cook_time": 20,
+  "steps": ["step 1 in Japanese", "step 2"],
+  "ingredients": [
+    {
+      "name_ja": "Japanese ingredient name",
+      "name_en": "English ingredient name",
+      "quantity": "quantity in Japanese format (e.g. 200g, 大さじ2, 1個)",
+      "search_query": "English search term for NZ supermarket (e.g. chicken thigh, soy sauce)",
+      "aisle": "where to find in NZ supermarket (e.g. Asian aisle, Produce section, Meat section)",
+      "optional": false
+    }
+  ]
+}
+
+Rules:
+- Use common ingredients available at NZ supermarkets (Woolworths, Pak'nSave, New World)
+- search_query must be simple English product names that would match supermarket search
+- Include 5-12 ingredients
+- Steps should be in Japanese
+- If the input is not a real dish, return null`;
+
+  try {
+    const msg = await anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 2000,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    let text = msg.content[0].type === "text" ? msg.content[0].text : "";
+    text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+    if (text === "null" || !text) return null;
+    return JSON.parse(text) as AIRecipe;
+  } catch {
+    return null;
   }
 }
 
@@ -25,163 +101,131 @@ export async function GET(request: NextRequest) {
     return Response.json({ results: [], suggestions: [] });
   }
 
-  const zhToId: Record<string, string> = {
-    "大阪烧": "okonomiyaki", "咖喱饭": "curry-rice", "咖喱": "curry-rice",
-    "照烧鸡肉": "teriyaki-chicken", "照烧鸡": "teriyaki-chicken", "照烧": "teriyaki-chicken",
-    "味噌汤": "miso-soup", "味噌": "miso-soup",
-    "亲子丼": "oyakodon", "亲子饭": "oyakodon",
-    "土豆炖肉": "nikujaga", "炖肉": "nikujaga",
-    "日式炸鸡": "karaage", "炸鸡": "karaage",
-    "拉面": "ramen", "拉麵": "ramen",
-  };
+  const searchFn = getSearchFn(store);
 
-  const zhMatch = zhToId[query.trim()];
-  let recipeFilter = `name_ja.ilike.%${query}%,name_en.ilike.%${query}%`;
-  if (zhMatch) {
-    recipeFilter += `,id.eq.${zhMatch}`;
+  async function lookupIngredientPrice(searchQuery: string, ingredientId?: string) {
+    let liveProduct: {
+      name: string;
+      price: number;
+      salePrice?: number;
+      imageUrl: string;
+      inStock: boolean;
+      store: string;
+      unitPrice?: string;
+    } | undefined;
+
+    if (ingredientId) {
+      const { data: cached } = await supabase
+        .from("store_products")
+        .select("*")
+        .eq("ingredient_id", ingredientId)
+        .eq("store", store)
+        .gte("scraped_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .order("scraped_at", { ascending: false })
+        .limit(1);
+
+      if (cached && cached.length > 0) {
+        const c = cached[0];
+        return {
+          name: c.product_name,
+          price: Number(c.price),
+          salePrice: c.sale_price ? Number(c.sale_price) : undefined,
+          imageUrl: c.image_url ?? "",
+          inStock: c.in_stock,
+          store: c.store,
+          unitPrice: c.unit_price ?? undefined,
+        };
+      }
+    }
+
+    try {
+      const products = await searchFn(searchQuery);
+      if (products.length > 0) {
+        const p = products[0];
+        liveProduct = {
+          name: p.name,
+          price: p.price,
+          salePrice: p.salePrice,
+          imageUrl: p.imageUrl,
+          inStock: p.inStock,
+          store: p.store,
+          unitPrice: p.unitPrice,
+        };
+        if (ingredientId) {
+          supabase
+            .from("store_products")
+            .insert({
+              ingredient_id: ingredientId,
+              store,
+              product_name: p.name,
+              brand: p.brand,
+              price: p.price,
+              sale_price: p.salePrice ?? null,
+              image_url: p.imageUrl,
+              in_stock: p.inStock,
+              size: p.size,
+              unit_price: p.unitPrice ?? null,
+            })
+            .then(() => {});
+        }
+      }
+    } catch {
+      // scraping failed
+    }
+    return liveProduct;
   }
 
-  const { data: recipes } = await supabase
-    .from("recipes")
-    .select("*")
-    .or(recipeFilter);
+  // AI generates recipe for any dish in any language
+  const aiRecipe = await generateRecipeWithAI(query);
 
-  if (!recipes || recipes.length === 0) {
-    const { data: allRecipes } = await supabase
-      .from("recipes")
-      .select("id, name_ja, name_en");
+  if (!aiRecipe) {
     return Response.json({
       results: [],
-      suggestions: allRecipes ?? [],
       message: `「${query}」のレシピは見つかりませんでした。`,
     });
   }
 
-  const searchFn = getSearchFn(store);
+  // Match AI ingredients against DB ingredients for cached price data
+  const ingredients = await Promise.all(
+    aiRecipe.ingredients.map(async (aiIng) => {
+      const { data: dbMatch } = await supabase
+        .from("ingredients")
+        .select("id, name_ja, name_en, search_query, aisle")
+        .or(`name_ja.ilike.%${aiIng.name_ja}%,name_en.ilike.%${aiIng.name_en}%`)
+        .limit(1);
 
-  const results = await Promise.all(
-    recipes.map(async (recipe) => {
-      // レシピの食材を取得（中間テーブル + 食材マスタ JOIN）
-      const { data: recipeIngredients } = await supabase
-        .from("recipe_ingredients")
-        .select(`
-          quantity,
-          is_optional,
-          sort_order,
-          ingredients (
-            id,
-            name_ja,
-            name_en,
-            search_query,
-            aisle,
-            is_optional
-          )
-        `)
-        .eq("recipe_id", recipe.id)
-        .order("sort_order");
+      const matched = dbMatch?.[0];
+      const searchQuery = matched?.search_query ?? aiIng.search_query;
+      const ingredientId = matched?.id;
 
-      // 食材ごとに: DBキャッシュ確認 → なければスクレイピング → DB保存
-      const ingredients = await Promise.all(
-        (recipeIngredients ?? []).map(async (ri) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const rawIng = ri.ingredients as any;
-          const ing = Array.isArray(rawIng) ? rawIng[0] : rawIng;
-          if (!ing) return null;
-
-          // DBから最新の価格データを取得（24時間以内）
-          const { data: cached } = await supabase
-            .from("store_products")
-            .select("*")
-            .eq("ingredient_id", ing.id)
-            .eq("store", store)
-            .gte("scraped_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-            .order("scraped_at", { ascending: false })
-            .limit(1);
-
-          let liveProduct: {
-            name: string;
-            price: number;
-            salePrice?: number;
-            imageUrl: string;
-            inStock: boolean;
-            store: string;
-            unitPrice?: string;
-          } | undefined;
-
-          if (cached && cached.length > 0) {
-            const c = cached[0];
-            liveProduct = {
-              name: c.product_name,
-              price: Number(c.price),
-              salePrice: c.sale_price ? Number(c.sale_price) : undefined,
-              imageUrl: c.image_url ?? "",
-              inStock: c.in_stock,
-              store: c.store,
-              unitPrice: c.unit_price ?? undefined,
-            };
-          } else {
-            // キャッシュなし → スクレイピング
-            try {
-              const products = await searchFn(ing.search_query);
-              if (products.length > 0) {
-                const p = products[0];
-                liveProduct = {
-                  name: p.name,
-                  price: p.price,
-                  salePrice: p.salePrice,
-                  imageUrl: p.imageUrl,
-                  inStock: p.inStock,
-                  store: p.store,
-                  unitPrice: p.unitPrice,
-                };
-                // DBに保存（バックグラウンド、エラー無視）
-                supabase
-                  .from("store_products")
-                  .insert({
-                    ingredient_id: ing.id,
-                    store,
-                    product_name: p.name,
-                    brand: p.brand,
-                    price: p.price,
-                    sale_price: p.salePrice ?? null,
-                    image_url: p.imageUrl,
-                    in_stock: p.inStock,
-                    size: p.size,
-                    unit_price: p.unitPrice ?? null,
-                  })
-                  .then(() => {});
-              }
-            } catch {
-              // スクレイピング失敗 — liveProduct は undefined のまま
-            }
-          }
-
-          return {
-            ingredient_id: ing.id,
-            name_ja: ing.name_ja,
-            name_en: ing.name_en,
-            nz_product: ing.name_en,
-            quantity: ri.quantity,
-            aisle: ing.aisle,
-            optional: ri.is_optional,
-            liveProduct,
-          };
-        })
-      );
+      const liveProduct = await lookupIngredientPrice(searchQuery, ingredientId);
 
       return {
-        id: recipe.id,
-        name_ja: recipe.name_ja,
-        name_en: recipe.name_en,
-        description: recipe.description,
-        servings: recipe.servings,
-        prep_time: recipe.prep_time,
-        cook_time: recipe.cook_time,
-        steps: recipe.steps,
-        ingredients: ingredients.filter(Boolean),
+        ingredient_id: ingredientId ?? undefined,
+        name_ja: matched?.name_ja ?? aiIng.name_ja,
+        name_en: matched?.name_en ?? aiIng.name_en,
+        nz_product: aiIng.name_en,
+        quantity: aiIng.quantity,
+        aisle: matched?.aisle ?? aiIng.aisle,
+        optional: aiIng.optional,
+        liveProduct,
       };
     })
   );
 
-  return Response.json({ results, store });
+  return Response.json({
+    results: [{
+      id: aiRecipe.id,
+      name_ja: aiRecipe.name_ja,
+      name_en: aiRecipe.name_en,
+      description: aiRecipe.description,
+      servings: aiRecipe.servings,
+      prep_time: aiRecipe.prep_time,
+      cook_time: aiRecipe.cook_time,
+      steps: aiRecipe.steps,
+      ingredients,
+    }],
+    store,
+    ai_generated: true,
+  });
 }
