@@ -371,7 +371,7 @@ export async function GET(request: NextRequest) {
 
       const liveProduct = await lookupIngredientPrice(searchQuery, ingredientId);
 
-      let altResults: { name: string; search_query: string; liveProduct: typeof liveProduct }[] = [];
+      const altResults: { name: string; search_query: string; liveProduct: typeof liveProduct }[] = [];
       if (!liveProduct) {
         const altTerms = await suggestAlternatives(aiIng.name_en);
         for (const alt of altTerms) {

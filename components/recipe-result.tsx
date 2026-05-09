@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { RecipeWithPricing } from "@/types";
 import type { Locale } from "@/app/lib/i18n";
-import { t, recipeName, recipeDescription, quantity as tq } from "@/app/lib/i18n";
+import { t, recipeName, recipeDescription } from "@/app/lib/i18n";
 import { IngredientCard } from "@/components/ingredient-card";
 import { PriceComparePanel } from "@/components/price-compare-panel";
 

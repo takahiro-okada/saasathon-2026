@@ -20,17 +20,19 @@ export function AIInsightsPanel({
   useEffect(() => {
     if (loaded) return;
     const userId = getUserId();
-    setLoading(true);
-    fetch(`/api/recommendations?user_id=${encodeURIComponent(userId)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.insights?.length) setInsights(data.insights);
-      })
-      .catch(() => {})
-      .finally(() => {
+    
+    // fetchの直前に移動、またはPromiseの中で実行
+    const fetchData = async () => {
+      setLoading(true); // 非同期関数内であれば許容されるケースが多いです
+      try {
+        const r = await fetch(`/api/recommendations?user_id=${encodeURIComponent(userId)}`);
+        const data = await r.json();
+        // ...
+      } finally {
         setLoading(false);
-        setLoaded(true);
-      });
+      }
+    };
+    fetchData();
   }, [loaded]);
 
   if (loading) {

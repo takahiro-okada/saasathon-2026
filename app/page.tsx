@@ -35,6 +35,7 @@ export default function HomePage() {
     setHasMounted(true);
     const isDone = localStorage.getItem("nzrh_onboarding_done");
     if (isDone !== "true") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowWelcome(true);
     }
   }, []);

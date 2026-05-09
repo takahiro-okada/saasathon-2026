@@ -27,10 +27,13 @@ export function OnboardingOverlay({
   }, [stepConfig]);
 
   useEffect(() => {
-    updateRect();
+    const timer = requestAnimationFrame(() => {
+      updateRect();
+    });
     window.addEventListener("resize", updateRect);
     window.addEventListener("scroll", updateRect);
     return () => {
+      cancelAnimationFrame(timer);
       window.removeEventListener("resize", updateRect);
       window.removeEventListener("scroll", updateRect);
     };
