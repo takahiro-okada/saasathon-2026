@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Live demo
+    url: https://saasathon-2026.vercel.app/
+    about: Try ShopMate live before opening an issue
