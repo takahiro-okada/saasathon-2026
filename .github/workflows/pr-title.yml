@@ -37,11 +37,8 @@ jobs:
             chore
             revert
           requireScope: false
-          subjectPattern: ^(?![A-Z]).+$
-          subjectPatternError: |
-            The subject "{subject}" found in the pull request title "{title}"
-            doesn't match the conventional commits convention.
-            The subject must start with a lowercase character.
-            Example: "feat: add user authentication"
+          # No subject case enforcement — Dependabot uses "Bump ..." (capital B)
+          # and humans can choose either style. The Conventional Commits spec
+          # itself doesn't mandate subject case.
           wip: true
           validateSingleCommit: false
