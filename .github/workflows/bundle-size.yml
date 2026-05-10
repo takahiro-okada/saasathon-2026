@@ -34,7 +34,7 @@ jobs:
           cache: pnpm
 
       - name: Compare compressed sizes
-        uses: preactjs/compressed-size-action@v2
+        uses: preactjs/compressed-size-action@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           pattern: ".next/static/chunks/**/*.js"
