@@ -26,7 +26,7 @@ export function AIInsightsPanel({
       setLoading(true); // 非同期関数内であれば許容されるケースが多いです
       try {
         const r = await fetch(`/api/recommendations?user_id=${encodeURIComponent(userId)}`);
-        const data = await r.json();
+        await r.json();
         // ...
       } finally {
         setLoading(false);
