@@ -15,7 +15,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
     "@supabase/supabase-js": "^2.105.3",
-    "next": "16.2.6",
+    "next": "16.2.9",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "ws": "^8.21.0"
@@ -29,7 +29,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "16.2.9",
     "jest": "^30.4.2",
     "playwright": "^1.60.0",
     "tailwindcss": "^4",
