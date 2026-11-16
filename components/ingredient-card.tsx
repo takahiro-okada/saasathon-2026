@@ -24,7 +24,7 @@ export function IngredientCard({
   const live = ingredient.liveProduct;
   const staticSub = getSubstitution(ingredient.name_ja, locale);
   const isOutOfStock = live && !live.inStock;
-  const needsAiSub = isOutOfStock && !staticSub;
+  const needsAiSub = process.env.NEXT_PUBLIC_AI_ENABLED !== "false" && isOutOfStock && !staticSub;
 
   const [aiSub, setAiSub] = useState<string | null>(null);
   const [aiSubLoading, setAiSubLoading] = useState(false);
