@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   lighthouse:
-    name: Audit Vercel preview
+    name: Audit production build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -20,20 +20,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Wait for Vercel preview deployment
-        id: wait-preview
-        uses: patrickedqvist/wait-for-vercel-preview@v1.3.3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          max_timeout: 600
-          check_interval: 15
+          version: 10.34.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install and build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-key
+          NEXT_PUBLIC_AI_ENABLED: "false"
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Start production server
+        run: |
+          pnpm start > /tmp/lighthouse-server.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:3000/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/lighthouse-server.log
+          exit 1
 
       - name: Audit URL with Lighthouse
         id: lighthouse
         uses: treosh/lighthouse-ci-action@v12
         with:
           urls: |
-            ${{ steps.wait-preview.outputs.url }}
+            http://localhost:3000/
           uploadArtifacts: true
           temporaryPublicStorage: true
 

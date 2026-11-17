@@ -17,17 +17,17 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10.34.9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Setup pnpm cache
         uses: actions/cache@v5
         with:
-          path: ~/.local/share/pnpm/store/v3
+          path: ~/.local/share/pnpm/store/v10
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
