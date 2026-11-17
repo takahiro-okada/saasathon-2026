@@ -147,3 +147,12 @@ pnpm dev
 | `/api/chat` | Claude Haiku | Chat assistant |
 | `/api/substitution` | Claude Haiku | Ingredient substitution |
 | `/api/recommendations` | Claude Haiku | Recipe recommendations |
+
+
+## Cloudflare deployment
+
+The app runs on Cloudflare Workers through OpenNext. The tracked `wrangler.jsonc` defines its Worker, assets and any custom domains. Install dependencies with `pnpm install --frozen-lockfile`, then run `pnpm run build:cloudflare` and `pnpm run deploy:cloudflare`. GitHub pushes to `main` use the same commands through Cloudflare Builds.
+
+Configure environment values separately in Cloudflare Builds (build time) and Worker Secrets (runtime). Local `.env.production.local` and `.dev.vars` files are ignored. Use `wrangler secret bulk` with JSON on stdin to update runtime secrets. The configuration preserves existing runtime variables on deploy.
+
+Optional AI features are disabled for this deployment: `NEXT_PUBLIC_AI_ENABLED=false`, and no `ANTHROPIC_API_KEY` is configured. Existing stored recipes, substitutions and supermarket data remain available. The two Supabase client variables are required at both build time and runtime.

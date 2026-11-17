@@ -25,7 +25,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 11
+          version: 10.34.9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,7 +40,7 @@ jobs:
           pattern: ".next/static/chunks/**/*.js"
           strip-hash: "(?:[a-f0-9]{8,}\\.)?(?=\\.js$)"
           install-script: "pnpm install --frozen-lockfile --ignore-scripts"
-          build-script: "build"
+          build-script: "pnpm run build"
           minimum-change-threshold: 100
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
